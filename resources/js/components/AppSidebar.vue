@@ -14,6 +14,9 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { index as briefsIndex, create as briefsCreate } from '@/routes/briefs';
+import { index as businessUnitsIndex } from '@/routes/business-units';
+import { index as pitchPipelineIndex } from '@/routes/pitch-pipeline';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
@@ -25,17 +28,22 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Briefs',
-        href: dashboard(),
+        href: briefsIndex(),
         icon: BookOpen,
     },
     {
-        title: 'New Briefs',
-        href: dashboard(),
+        title: 'Upload Brief',
+        href: briefsCreate(),
         icon: UploadCloudIcon,
     },
     {
-        title: 'Bisnis Units',
-        href: dashboard(),
+        title: 'Business Units',
+        href: businessUnitsIndex(),
+        icon: BriefcaseBusiness,
+    },
+    {
+        title: 'Pitch Pipeline',
+        href: pitchPipelineIndex(),
         icon: BriefcaseBusiness,
     },
 ];

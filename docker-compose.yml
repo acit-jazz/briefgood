@@ -1,0 +1,67 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - '${APP_PORT:-8080}:80'
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: briefgood
+      DB_USERNAME: briefgood
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - postgres
+      - redis
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: php artisan queue:work redis --queue=default,ai-analysis --sleep=3 --tries=3
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: briefgood
+      DB_USERNAME: briefgood
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - '${FORWARD_DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_DB: briefgood
+      POSTGRES_USER: briefgood
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - briefgood-pgsql:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '${FORWARD_REDIS_PORT:-6379}:6379'
+    volumes:
+      - briefgood-redis:/data
+
+volumes:
+  briefgood-pgsql:
+  briefgood-redis:
