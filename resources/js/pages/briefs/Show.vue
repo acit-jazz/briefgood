@@ -71,6 +71,7 @@ const contentRef = ref<HTMLElement | null>(null);
 // Polling state
 const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const currentStep = ref(0);
+const isRerunning = ref(false);
 
 const analysisSteps = [
     { id: 'parsing', label: 'Parsing brief document', icon: FileText },
@@ -104,6 +105,7 @@ const currentStepData = computed(() => analysisSteps[currentStep.value]);
 const progressValue = computed(() => ((currentStep.value + 1) / analysisSteps.length) * 100);
 
 function rerunAnalysis(advanced = false): void {
+    isRerunning.value = true;
     form.advanced = advanced;
     form.post(analyze(props.brief.id).url, {
         preserveScroll: true,
@@ -120,16 +122,17 @@ function startPolling(): void {
         currentStep.value = (currentStep.value + 1) % analysisSteps.length;
 
         // Use Inertia's visit to reload data
-        if (isProcessing.value) {
+        if (isProcessing.value || isRerunning.value) {
             router.visit(window.location.pathname, {
                 method: 'get',
                 only: ['brief', 'analysis', 'pitchAssignments'],
                 preserveScroll: true,
                 onFinish: () => {
-                    // Stop polling if analysis is complete
+                    // Stop polling if analysis is complete AND job is done
                     if (!isProcessing.value && pollingInterval.value) {
                         clearInterval(pollingInterval.value);
                         pollingInterval.value = null;
+                        isRerunning.value = false;
                     }
                 },
             });
@@ -372,10 +375,10 @@ defineOptions({
                         class="cursor-pointer"
                         size="sm"
                         variant="outline"
-                        :disabled="form.processing"
+                        :disabled="isRerunning || isProcessing"
                         @click="rerunAnalysis(false)"
                     >
-                        <Spinner v-if="form.processing" class="mr-1 size-4" />
+                        <Spinner v-if="isRerunning || isProcessing" class="mr-1 size-4" />
                         <Sparkles v-else class="mr-1 size-4" />
                         Re-run
                     </Button>
