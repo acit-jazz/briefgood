@@ -61,6 +61,15 @@ Example WRONG output (do not produce this):
 - Program Management & Governance: Managing the project
 
 Keep output as clean semantic HTML only.
+
+RECOMMENDED RESOURCES MAPPING:
+Map each scope of work item to appropriate resources. Each resource should be listed with estimated hours, workload percentage, and duration. Examples:
+- "Content & Brand" + "Multimedia Production" → Photographer, Videographer, Motion Designer, Copywriter
+- "Design & UX" → UI/UX Designer
+- "Technical & CMS" + "SEO" → Frontend Developer, Backend Developer
+- "Program Management & Governance" → Project Manager, Strategist
+
+IMPORTANT: List ALL relevant resources needed for the scope. Do not limit to just 2-3 resources. If the scope has 10+ items, return at least 5-8 distinct resources with realistic estimates.
 INSTRUCTIONS;
     }
 
