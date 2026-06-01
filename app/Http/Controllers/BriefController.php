@@ -166,7 +166,7 @@ class BriefController extends Controller
         return back()->with('success', 'AI analysis has been queued.');
     }
 
-    public function updateAnalysis(UpdateAnalysisRequest $request, Brief $brief): Response
+    public function updateAnalysis(UpdateAnalysisRequest $request, Brief $brief): RedirectResponse
     {
         $this->authorize('update', $brief);
 
@@ -181,6 +181,6 @@ class BriefController extends Controller
             $validated['field'] => $validated['value'],
         ]);
 
-        return $this->show($brief);
+        return redirect()->back()->with('success', 'Analysis updated');
     }
 }

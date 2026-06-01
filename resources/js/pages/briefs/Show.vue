@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import HtmlEditor from '@/components/ui/html-editor.vue';
 import { dashboard } from '@/routes';
 import { analyze, index } from '@/routes/briefs';
 import analysisRoutes from '@/routes/briefs/analysis';
@@ -137,6 +138,11 @@ function saveEdit(): void {
         onSuccess: () => {
             editingField.value = null;
             editValue.value = '';
+            router.visit(window.location.pathname, {
+                method: 'get',
+                only: ['brief', 'analysis', 'pitchAssignments'],
+                preserveScroll: true,
+            });
         },
     });
 }
@@ -252,12 +258,12 @@ defineOptions({
                     </div>
                 </CardHeader>
                 <CardContent class="prose prose-sm dark:prose-invert max-w-none">
-                    <textarea
+                    <HtmlEditor
                         v-if="editingField === 'executive_summary'"
                         v-model="editValue"
-                        class="w-full min-h-[100px] p-2 border rounded"
+                        class="min-h-[100px]"
                     />
-                    <p v-else>{{ analysis.executive_summary }}</p>
+                    <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.executive_summary"></div>
                 </CardContent>
             </Card>
 
@@ -289,10 +295,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'scope_of_work'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></div>
                         </CardContent>
@@ -315,10 +321,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'deliverables'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></div>
                         </CardContent>
@@ -341,10 +347,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'mandatory_requirements'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></div>
                         </CardContent>
@@ -370,10 +376,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'target_audience'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></div>
                         </CardContent>
@@ -396,10 +402,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'timeline'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></div>
                         </CardContent>
@@ -422,10 +428,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'budget'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></div>
                         </CardContent>
@@ -451,10 +457,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'brand_overview'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></div>
                         </CardContent>
@@ -477,10 +483,10 @@ defineOptions({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <textarea
+                            <HtmlEditor
                                 v-if="editingField === 'campaign_objective'"
                                 v-model="editValue"
-                                class="w-full min-h-[100px] p-2 border rounded"
+                                class="min-h-[100px]"
                             />
                             <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></div>
                         </CardContent>
