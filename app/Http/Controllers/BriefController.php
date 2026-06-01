@@ -123,6 +123,39 @@ class BriefController extends Controller
         ]);
     }
 
+    public function preview(Brief $brief): Response
+    {
+        $this->authorize('view', $brief);
+
+        $brief = $this->briefs->find($brief->id) ?? $brief;
+        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource']);
+
+        return Inertia::render('briefs/Preview', [
+            'brief' => BriefResource::make($brief)->resolve(),
+            'analysis' => $brief->latestAnalysis
+                ? AiAnalysisResource::make($brief->latestAnalysis)->resolve()
+                : null,
+            'pitchAssignments' => $brief->pitchAssignments->map(function ($assignment) use ($brief) {
+                $recommendation = $brief->latestAnalysis?->recommendations
+                    ->where('business_unit_id', $assignment->business_unit_id)
+                    ->first();
+
+                if (! $recommendation && $assignment->businessUnit?->name) {
+                    $recommendation = $brief->latestAnalysis?->recommendations
+                        ->firstWhere('business_unit_name', $assignment->businessUnit->name);
+                }
+
+                return [
+                    'id' => $assignment->id,
+                    'status' => $assignment->status?->value,
+                    'confidence' => $assignment->confidence,
+                    'business_unit' => $assignment->businessUnit?->name,
+                    'matched_services' => $recommendation?->matched_services ?? [],
+                ];
+            }),
+        ]);
+    }
+
     public function analyze(Request $request, Brief $brief): RedirectResponse
     {
         $this->authorize('analyze', $brief);

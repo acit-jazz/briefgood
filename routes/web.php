@@ -14,6 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('briefs', BriefController::class)->only(['index', 'create', 'store', 'show']);
     Route::post('briefs/{brief}/analyze', [BriefController::class, 'analyze'])->name('briefs.analyze');
+    Route::get('briefs/{brief}/preview', [BriefController::class, 'preview'])->name('briefs.preview');
 
     Route::resource('business-units', BusinessUnitController::class)->except(['show']);
 

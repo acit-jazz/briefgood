@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { FileDown, Sparkles, FileText, Brain, Building2, CheckCircle } from 'lucide-vue-next';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,9 +64,6 @@ const form = useForm({
     advanced: false,
 });
 
-const contentRef = ref<HTMLElement | null>(null);
-
-// Polling state
 const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
 const currentStep = ref(0);
 const isRerunning = ref(false);
@@ -101,7 +96,6 @@ const processingMessage = computed(() => {
     return messages[currentStep.value] || messages[0];
 });
 
-const currentStepData = computed(() => analysisSteps[currentStep.value]);
 const progressValue = computed(() => ((currentStep.value + 1) / analysisSteps.length) * 100);
 
 function rerunAnalysis(advanced = false): void {
@@ -118,17 +112,14 @@ function startPolling(): void {
     }
 
     pollingInterval.value = setInterval(() => {
-        // Rotate through steps for animation
         currentStep.value = (currentStep.value + 1) % analysisSteps.length;
 
-        // Use Inertia's visit to reload data
         if (isProcessing.value || isRerunning.value) {
             router.visit(window.location.pathname, {
                 method: 'get',
                 only: ['brief', 'analysis', 'pitchAssignments'],
                 preserveScroll: true,
                 onFinish: () => {
-                    // Stop polling if analysis is complete AND job is done
                     if (!isProcessing.value && pollingInterval.value) {
                         clearInterval(pollingInterval.value);
                         pollingInterval.value = null;
@@ -161,74 +152,11 @@ onUnmounted(() => {
     stopPolling();
 });
 
-// Watch for form processing state changes (Re-run button clicked)
 watch(() => form.processing, (processing) => {
     if (processing && !pollingInterval.value) {
         startPolling();
     }
 });
-
-async function exportPDF(): Promise<void> {
-    if (!contentRef.value) {
-        return;
-    }
-
-    const canvas = await html2canvas(contentRef.value, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (cloneDoc, el) => {
-            // Replace oklch colors with rgb as html2canvas doesn't support oklch
-            cloneDoc.querySelectorAll('*').forEach((htmlEl) => {
-                const computedStyle = window.getComputedStyle(htmlEl);
-                ['color', 'background-color', 'border-color', 'fill', 'stroke'].forEach((prop) => {
-                    const val = computedStyle.getPropertyValue(prop);
-                    if (val && val.includes('oklch')) {
-                        htmlEl.style.setProperty(prop, '#000000');
-                    }
-                });
-            });
-            // Also remove Tailwind dark mode classes
-            cloneDoc.querySelectorAll('[class*="dark:"]').forEach((htmlEl) => {
-                htmlEl.classList.remove('dark:text-blue-300', 'dark:bg-blue-950/20', 'dark:prose-invert');
-            });
-        },
-    });
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-    const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-    });
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = pdfWidth / (imgWidth / 2);
-    const height = (imgHeight / 2) * ratio;
-
-    let y = 0;
-
-    if (height <= pdfHeight) {
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, height);
-    } else {
-        let remaining = height;
-
-        while (remaining > 0) {
-            pdf.addImage(imgData, 'JPEG', 0, -y, pdfWidth, height);
-            y += pdfHeight;
-            remaining -= pdfHeight;
-
-            if (remaining > 0) {
-                pdf.addPage();
-            }
-        }
-    }
-
-    pdf.save(`brief-analysis-${props.brief.id}.pdf`);
-}
 
 defineOptions({
     layout: {
@@ -256,66 +184,66 @@ defineOptions({
                         v-if="analysis"
                         size="sm"
                         variant="outline"
-                        @click="exportPDF"
+                        as-child
                     >
-                        <FileDown class="mr-1 size-4" />
-                        Export PDF
+                        <Link :href="`/briefs/${brief.id}/preview`">
+                            <FileDown class="mr-1 size-4" />
+                            Preview PDF
+                        </Link>
                     </Button>
                     <Badge>{{ brief.status_label }}</Badge>
                     <Badge variant="secondary">{{ brief.ai_status }}</Badge>
                 </div>
             </div>
 
-            <div ref="contentRef">
-                <Card v-if="analysis && !form.processing" class="mb-5">
-                    <CardHeader>
-                        <CardTitle>Executive Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none">
-                        <p>{{ analysis.executive_summary }}</p>
-                    </CardContent>
-                </Card>
+            <Card v-if="analysis && !form.processing" class="mb-5">
+                <CardHeader>
+                    <CardTitle>Executive Summary</CardTitle>
+                </CardHeader>
+                <CardContent class="prose prose-sm dark:prose-invert max-w-none">
+                    <p>{{ analysis.executive_summary }}</p>
+                </CardContent>
+            </Card>
 
-                <div
-                    v-if="analysis && !form.processing"
-                    class="grid gap-4 md:grid-cols-2"
-                >
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Brand Overview</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Campaign Objective</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Target Audience</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Scope of Work</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Deliverables</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Timeline</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Budget</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Mandatory Requirements</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></CardContent>
-                    </Card>
-                </div>
+            <div
+                v-if="analysis && !form.processing"
+                class="grid gap-4 md:grid-cols-2"
+            >
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Brand Overview</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Campaign Objective</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Target Audience</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Scope of Work</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Deliverables</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Timeline</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Budget</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle class="text-sm">Mandatory Requirements</CardTitle></CardHeader>
+                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></CardContent>
+                </Card>
             </div>
 
-            <Card v-if="isProcessing || form.processing">
+            <Card v-if="!analysis || isProcessing">
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2">
                         <Spinner class="size-4" />
