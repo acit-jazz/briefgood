@@ -4,6 +4,7 @@ use App\Http\Controllers\BriefController;
 use App\Http\Controllers\BusinessUnitController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PitchPipelineController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -15,6 +16,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('briefs/{brief}/analyze', [BriefController::class, 'analyze'])->name('briefs.analyze');
 
     Route::resource('business-units', BusinessUnitController::class)->except(['show']);
+
+    Route::resource('users', UserController::class);
 
     Route::get('pitch-pipeline', [PitchPipelineController::class, 'index'])->name('pitch-pipeline.index');
 });

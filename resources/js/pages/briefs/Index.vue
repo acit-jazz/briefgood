@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
+import { Eye, Plus } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,12 +77,20 @@ defineOptions({
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <p
-                        v-if="brief.deadline"
-                        class="text-xs text-muted-foreground"
-                    >
-                        Deadline: {{ brief.deadline }}
-                    </p>
+                    <div class="flex items-center justify-between">
+                        <p
+                            v-if="brief.deadline"
+                            class="text-xs text-muted-foreground"
+                        >
+                            Deadline: {{ brief.deadline }}
+                        </p>
+                        <Button size="sm" variant="outline" as-child>
+                            <Link :href="show(brief.id)">
+                                <Eye class="mr-1 size-3" />
+                                View Details
+                            </Link>
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
 

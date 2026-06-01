@@ -77,9 +77,7 @@ class BriefController extends Controller
 
         AnalyzeBriefJob::dispatch($brief);
 
-        return redirect()
-            ->route('briefs.show', $brief)
-            ->with('success', 'Brief uploaded. AI analysis has been queued.');
+        return redirect()->route('briefs.show', $brief);
     }
 
     public function show(Brief $brief): Response

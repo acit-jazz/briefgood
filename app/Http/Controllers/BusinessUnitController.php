@@ -38,6 +38,7 @@ class BusinessUnitController extends Controller
         return Inertia::render('business-units/Form', [
             'businessUnit' => null,
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
+            'users' => \App\Models\User::query()->orderBy('name')->get(['id', 'name', 'role']),
         ]);
     }
 
@@ -45,8 +46,21 @@ class BusinessUnitController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $services = $data['services'] ?? [];
+        unset($data['services']);
 
-        BusinessUnit::query()->create($data);
+        $unit = BusinessUnit::query()->create($data);
+
+        foreach ($services as $serviceName) {
+            if (empty(trim($serviceName))) {
+                continue;
+            }
+            $unit->services()->create([
+                'name' => trim($serviceName),
+                'slug' => Str::slug($serviceName),
+                'is_active' => true,
+            ]);
+        }
 
         return redirect()
             ->route('business-units.index')
@@ -57,11 +71,12 @@ class BusinessUnitController extends Controller
     {
         $this->authorize('update', $businessUnit);
 
-        $businessUnit->load(['category', 'services']);
+        $businessUnit->load(['category', 'services', 'pic']);
 
         return Inertia::render('business-units/Form', [
             'businessUnit' => BusinessUnitResource::make($businessUnit)->resolve(),
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
+            'users' => \App\Models\User::query()->orderBy('name')->get(['id', 'name', 'role']),
         ]);
     }
 
@@ -69,8 +84,23 @@ class BusinessUnitController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $services = $data['services'] ?? [];
+        unset($data['services']);
 
         $businessUnit->update($data);
+
+        // Sync services - delete existing and recreate
+        $businessUnit->services()->delete();
+        foreach ($services as $serviceName) {
+            if (empty(trim($serviceName))) {
+                continue;
+            }
+            $businessUnit->services()->create([
+                'name' => trim($serviceName),
+                'slug' => Str::slug($serviceName),
+                'is_active' => true,
+            ]);
+        }
 
         return redirect()
             ->route('business-units.index')

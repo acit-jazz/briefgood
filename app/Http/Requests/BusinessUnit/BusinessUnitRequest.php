@@ -36,6 +36,8 @@ class BusinessUnitRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'pic_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['sometimes', 'boolean'],
+            'services' => ['nullable', 'array'],
+            'services.*' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

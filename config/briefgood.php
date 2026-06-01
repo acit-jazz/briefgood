@@ -9,6 +9,10 @@ return [
         'confidence_threshold' => (float) env('BRIEFGOOD_AI_CONFIDENCE_THRESHOLD', 60),
         'timeout' => (int) env('BRIEFGOOD_AI_TIMEOUT', 180),
         'max_retries' => (int) env('BRIEFGOOD_AI_MAX_RETRIES', 2),
+        'openrouter' => [
+            'default_model' => env('BRIEFGOOD_OPENROUTER_MODEL', 'minimax/minimax-grammarly-sonnet-4-20250514'),
+            'advanced_model' => env('BRIEFGOOD_OPENROUTER_ADVANCED_MODEL', 'minimax/minimax-grammarly-sonnet-4-20250514'),
+        ],
     ],
 
     'uploads' => [

@@ -77,4 +77,21 @@ class User extends Authenticatable implements PasskeyUser
     {
         return in_array($this->role, [UserRole::SuperAdmin, UserRole::GroupAdmin], true);
     }
+
+    public function canManageUsers(): bool
+    {
+        return in_array($this->role, [UserRole::SuperAdmin, UserRole::GroupAdmin], true);
+    }
+
+    public function scopeFilter(\Illuminate\Database\Eloquent\Builder $query, array $filters = []): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query
+            ->when($filters['search'] ?? null, function (\Illuminate\Database\Eloquent\Builder $q, string $search): void {
+                $q->where(function (\Illuminate\Database\Eloquent\Builder $inner) use ($search): void {
+                    $inner->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['role'] ?? null, fn (\Illuminate\Database\Eloquent\Builder $q, string $role) => $q->where('role', $role));
+    }
 }
