@@ -173,3 +173,6 @@
         @apply bg-background text-foreground;
     }
 }
+div[data-slot="card-content"] ul {
+    @apply list-disc pl-5 space-y-1;
+}

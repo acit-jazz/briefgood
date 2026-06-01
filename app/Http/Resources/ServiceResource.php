@@ -19,7 +19,16 @@ class ServiceResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'keywords' => $this->keywords,
             'is_active' => $this->is_active,
+            'business_units' => $this->whenLoaded('businessUnits', fn () =>
+                $this->businessUnits->map(fn ($bu) => [
+                    'id' => $bu->id,
+                    'name' => $bu->name,
+                    'specialization_score' => $bu->pivot->specialization_score,
+                    'notes' => $bu->pivot->notes,
+                ])
+            ),
         ];
     }
 }

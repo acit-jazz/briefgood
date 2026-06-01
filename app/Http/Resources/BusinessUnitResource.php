@@ -20,14 +20,26 @@ class BusinessUnitResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'is_active' => $this->is_active,
+            'category_id' => $this->category?->id,
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,
             ]),
-            'services' => ServiceResource::collection($this->whenLoaded('services')),
+            'services' => $this->whenLoaded('services', fn () =>
+                $this->services->map(fn ($service) => [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'slug' => $service->slug,
+                    'description' => $service->description,
+                    'keywords' => $service->keywords,
+                    'specialization_score' => $service->pivot->specialization_score,
+                    'notes' => $service->pivot->notes,
+                ])
+            ),
             'pic' => $this->whenLoaded('pic', fn () => [
                 'id' => $this->pic?->id,
                 'name' => $this->pic?->name,
+                'email' => $this->pic?->email,
             ]),
         ];
     }

@@ -23,7 +23,7 @@ defineOptions({
 <template>
     <Head title="Upload Brief" />
 
-    <div class="mx-auto max-w-2xl p-4">
+    <div class="w-full p-4">
         <Card>
             <CardHeader>
                 <CardTitle>Upload Client Brief</CardTitle>

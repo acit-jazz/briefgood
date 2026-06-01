@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, UploadCloudIcon, LayoutGrid, BriefcaseBusiness } from 'lucide-vue-next';
+import { BookOpen, UploadCloudIcon, LayoutGrid, BriefcaseBusiness, UserIcon } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -17,6 +17,7 @@ import {
 import { index as briefsIndex, create as briefsCreate } from '@/routes/briefs';
 import { index as businessUnitsIndex } from '@/routes/business-units';
 import { index as pitchPipelineIndex } from '@/routes/pitch-pipeline';
+import { index as usersIndex } from '@/routes/users';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
@@ -45,6 +46,11 @@ const mainNavItems: NavItem[] = [
         title: 'Pitch Pipeline',
         href: pitchPipelineIndex(),
         icon: BriefcaseBusiness,
+    },
+    {
+        title: 'Users',
+        href: usersIndex(),
+        icon: UserIcon,
     },
 ];
 

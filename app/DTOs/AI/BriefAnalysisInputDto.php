@@ -6,7 +6,7 @@ readonly class BriefAnalysisInputDto
 {
     /**
      * @param  list<array{name: string, path: string}>  $attachments
-     * @param  list<array{id: string, name: string, category: string, services: list<string>}>  $businessUnits
+     * @param  list<array{id: string, name: string, category: string, services: list<array{name: string, specialization_score: int}>}>  $businessUnits
      */
     public function __construct(
         public string $briefId,

@@ -85,6 +85,11 @@ defineOptions({
                             {{ service.name }}
                         </Badge>
                     </div>
+                    <div class="pt-2 border-t mt-4">
+                       <small class="text-xs"> <strong>{{ unit.pic?.name || '-' }}</strong> <br> 
+                            <span class="text-gray-500">{{ unit.pic?.email || '-' }}</span>
+                        </small>
+                    </div>
                 </CardContent>
             </Card>
         </div>

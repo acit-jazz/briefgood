@@ -17,12 +17,22 @@ class PromptBuilderService
         $base = $template?->content ?? 'Analyze the client brief and produce structured recommendations.';
 
         $catalog = collect($input->businessUnits)
-            ->map(fn (array $unit) => sprintf(
-                '- %s (%s): %s',
-                $unit['name'],
-                $unit['category'],
-                implode(', ', $unit['services']),
-            ))
+            ->map(function (array $unit): string {
+                $servicesList = collect($unit['services'])
+                    ->map(fn (array $service) => sprintf(
+                        '%s (%d)',
+                        $service['name'],
+                        $service['specialization_score'],
+                    ))
+                    ->implode(', ');
+
+                return sprintf(
+                    '- %s (%s): %s',
+                    $unit['name'],
+                    $unit['category'],
+                    $servicesList,
+                );
+            })
             ->implode("\n");
 
         return <<<PROMPT
@@ -43,7 +53,7 @@ BRIEF CONTENT:
 {$this->sanitizeBriefText($input->briefText)}
 ---
 
-Match required services to business units using the catalog. Provide confidence percentages (0-100) per unit.
+Match required services to business units using the catalog. Consider specialization scores (higher = more expert). Provide confidence percentages (0-100) per unit based on how well the BU's specialization matches the brief requirements.
 PROMPT;
     }
 

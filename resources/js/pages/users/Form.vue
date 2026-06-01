@@ -53,7 +53,7 @@ function getRoleLabel(roleValue: string): string {
 <template>
     <Head :title="isEdit ? 'Edit User' : 'Create User'" />
 
-    <div class="mx-auto max-w-xl p-4">
+    <div class="w-full p-4">
         <Card>
             <CardHeader>
                 <CardTitle>{{ isEdit ? 'Edit' : 'Create' }} User</CardTitle>

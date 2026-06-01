@@ -96,7 +96,10 @@ class AIAnalysisPipeline
                 'id' => $unit->id,
                 'name' => $unit->name,
                 'category' => $unit->category?->name ?? 'General',
-                'services' => $unit->services->pluck('name')->all(),
+                'services' => $unit->services->map(fn ($service) => [
+                    'name' => $service->name,
+                    'specialization_score' => $service->pivot->specialization_score ?? 50,
+                ])->all(),
             ])
             ->all();
 

@@ -37,7 +37,9 @@ class BusinessUnitRequest extends FormRequest
             'pic_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['sometimes', 'boolean'],
             'services' => ['nullable', 'array'],
-            'services.*' => ['nullable', 'string', 'max:255'],
+            'services.*.service_id' => ['nullable', 'uuid', 'exists:services,id'],
+            'services.*.specialization_score' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'services.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }
