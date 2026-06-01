@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\AiAnalysisStatus;
 use App\Enums\BriefStatus;
-use App\Http\Repositories\BriefRepository;
 use App\Http\Requests\Brief\StoreBriefRequest;
+use App\Http\Requests\UpdateAnalysisRequest;
+use App\Http\Repositories\BriefRepository;
 use App\Http\Resources\AiAnalysisResource;
 use App\Http\Resources\BriefResource;
 use App\Jobs\AnalyzeBriefJob;
@@ -163,5 +164,23 @@ class BriefController extends Controller
         AnalyzeBriefJob::dispatch($brief, $request->boolean('advanced'));
 
         return back()->with('success', 'AI analysis has been queued.');
+    }
+
+    public function updateAnalysis(UpdateAnalysisRequest $request, Brief $brief): Response
+    {
+        $this->authorize('update', $brief);
+
+        $validated = $request->validated();
+        $brief->load(['latestAnalysis']);
+
+        if (! $brief->latestAnalysis) {
+            abort(404, 'No analysis found');
+        }
+
+        $brief->latestAnalysis->update([
+            $validated['field'] => $validated['value'],
+        ]);
+
+        return $this->show($brief);
     }
 }

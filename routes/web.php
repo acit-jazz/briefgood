@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::resource('briefs', BriefController::class)->only(['index', 'create', 'store', 'show']);
+    Route::patch('briefs/{brief}/analysis', [BriefController::class, 'updateAnalysis'])->name('briefs.analysis.update');
     Route::post('briefs/{brief}/analyze', [BriefController::class, 'analyze'])->name('briefs.analyze');
     Route::get('briefs/{brief}/preview', [BriefController::class, 'preview'])->name('briefs.preview');
 

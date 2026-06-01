@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown } from 'lucide-vue-next';
+import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { dashboard } from '@/routes';
 import { analyze, index } from '@/routes/briefs';
+import analysisRoutes from '@/routes/briefs/analysis';
 
 type Analysis = {
+    id: string;
     executive_summary?: string;
     brand_overview?: string;
     campaign_objective?: string;
@@ -60,10 +62,16 @@ const props = defineProps<{
         estimated_duration_days?: number;
     }>;
 }>();
-console.log('pitchAssignments',props.pitchAssignments);
 
 const form = useForm({
     advanced: false,
+});
+
+const editingField = ref<string | null>(null);
+const editValue = ref('');
+const editForm = useForm({
+    field: '',
+    value: '',
 });
 
 const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
@@ -105,6 +113,31 @@ function rerunAnalysis(advanced = false): void {
     form.advanced = advanced;
     form.post(analyze(props.brief.id).url, {
         preserveScroll: true,
+    });
+}
+
+function startEditing(field: string, value: string): void {
+    editingField.value = field;
+    editValue.value = value;
+}
+
+function cancelEditing(): void {
+    editingField.value = null;
+    editValue.value = '';
+}
+
+function saveEdit(): void {
+    if (!editingField.value || !props.analysis) return;
+
+    editForm.field = editingField.value;
+    editForm.value = editValue.value;
+
+    editForm.patch(analysisRoutes.update(props.brief.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingField.value = null;
+            editValue.value = '';
+        },
     });
 }
 
@@ -199,11 +232,32 @@ defineOptions({
             </div>
 
             <Card v-if="analysis && !isProcessing" class="mb-5">
-                <CardHeader>
+                <CardHeader class="flex flex-row items-center justify-between">
                     <CardTitle>Executive Summary</CardTitle>
+                    <Button
+                        v-if="editingField !== 'executive_summary'"
+                        size="sm"
+                        variant="ghost"
+                        @click="startEditing('executive_summary', analysis.executive_summary || '')"
+                    >
+                        <Pencil class="size-4" />
+                    </Button>
+                    <div v-else class="flex gap-1">
+                        <Button size="sm" variant="ghost" @click="cancelEditing">
+                            <X class="size-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing">
+                            <Check class="size-4" />
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent class="prose prose-sm dark:prose-invert max-w-none">
-                    <p>{{ analysis.executive_summary }}</p>
+                    <textarea
+                        v-if="editingField === 'executive_summary'"
+                        v-model="editValue"
+                        class="w-full min-h-[100px] p-2 border rounded"
+                    />
+                    <p v-else>{{ analysis.executive_summary }}</p>
                 </CardContent>
             </Card>
 
@@ -217,45 +271,222 @@ defineOptions({
                 </TabsList>
 
                 <TabsContent value="scope">
+                    <!-- Scope of Work -->
+                    <Card class="mb-4">
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Scope of Work</CardTitle>
+                            <Button
+                                v-if="editingField !== 'scope_of_work'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('scope_of_work', analysis.scope_of_work || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'scope_of_work'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></div>
+                        </CardContent>
+                    </Card>
+                    <!-- Deliverables -->
+                    <Card class="mb-4">
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Deliverables</CardTitle>
+                            <Button
+                                v-if="editingField !== 'deliverables'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('deliverables', analysis.deliverables || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'deliverables'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></div>
+                        </CardContent>
+                    </Card>
+                    <!-- Mandatory Requirements -->
                     <Card>
-                        <CardHeader><CardTitle class="text-sm">Scope of Work</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></CardContent>
-                    </Card>
-                    <Card class="mt-4">
-                        <CardHeader><CardTitle class="text-sm">Deliverables</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></CardContent>
-                    </Card>
-                    <Card class="mt-4">
-                        <CardHeader><CardTitle class="text-sm">Mandatory Requirements</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></CardContent>
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Mandatory Requirements</CardTitle>
+                            <Button
+                                v-if="editingField !== 'mandatory_requirements'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('mandatory_requirements', analysis.mandatory_requirements || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'mandatory_requirements'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></div>
+                        </CardContent>
                     </Card>
                 </TabsContent>
 
                 <TabsContent value="campaign">
+                    <!-- Target Audience -->
+                    <Card class="mb-4">
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Target Audience</CardTitle>
+                            <Button
+                                v-if="editingField !== 'target_audience'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('target_audience', analysis.target_audience || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'target_audience'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></div>
+                        </CardContent>
+                    </Card>
+                    <!-- Timeline -->
+                    <Card class="mb-4">
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Timeline</CardTitle>
+                            <Button
+                                v-if="editingField !== 'timeline'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('timeline', analysis.timeline || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'timeline'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></div>
+                        </CardContent>
+                    </Card>
+                    <!-- Budget -->
                     <Card>
-                        <CardHeader><CardTitle class="text-sm">Target Audience</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></CardContent>
-                    </Card>
-                    <Card class="mt-4">
-                        <CardHeader><CardTitle class="text-sm">Timeline</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></CardContent>
-                    </Card>
-                    <Card class="mt-4">
-                        <CardHeader><CardTitle class="text-sm">Budget</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></CardContent>
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Budget</CardTitle>
+                            <Button
+                                v-if="editingField !== 'budget'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('budget', analysis.budget || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'budget'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></div>
+                        </CardContent>
                     </Card>
                 </TabsContent>
 
                 <TabsContent value="additional">
-                    <Card>
-                        <CardHeader><CardTitle class="text-sm">Brand Overview</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></CardContent>
+                    <!-- Brand Overview -->
+                    <Card class="mb-4">
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Brand Overview</CardTitle>
+                            <Button
+                                v-if="editingField !== 'brand_overview'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('brand_overview', analysis.brand_overview || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'brand_overview'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></div>
+                        </CardContent>
                     </Card>
-                    <Card class="mt-4">
-                        <CardHeader><CardTitle class="text-sm">Campaign Objective</CardTitle></CardHeader>
-                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></CardContent>
+                    <!-- Campaign Objective -->
+                    <Card>
+                        <CardHeader class="flex flex-row items-center justify-between">
+                            <CardTitle class="text-sm">Campaign Objective</CardTitle>
+                            <Button
+                                v-if="editingField !== 'campaign_objective'"
+                                size="sm"
+                                variant="ghost"
+                                @click="startEditing('campaign_objective', analysis.campaign_objective || '')"
+                            >
+                                <Pencil class="size-4" />
+                            </Button>
+                            <div v-else class="flex gap-1">
+                                <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
+                                <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <textarea
+                                v-if="editingField === 'campaign_objective'"
+                                v-model="editValue"
+                                class="w-full min-h-[100px] p-2 border rounded"
+                            />
+                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></div>
+                        </CardContent>
                     </Card>
                 </TabsContent>
+
                 <TabsContent value="ai-recommended-units">
                     <Card v-if="analysis?.recommended_business_units?.length && !isProcessing">
                         <CardHeader>
@@ -289,6 +520,7 @@ defineOptions({
                         </CardContent>
                     </Card>
                 </TabsContent>
+
                 <TabsContent value="ai-recommended-resources">
                     <Card v-if="resourceAllocations?.length && !isProcessing">
                         <CardHeader>
