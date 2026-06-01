@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { dashboard } from '@/routes';
 import { analyze, index } from '@/routes/briefs';
 
@@ -205,43 +206,54 @@ defineOptions({
                 </CardContent>
             </Card>
 
-            <div
-                v-if="analysis && !form.processing"
-                class="grid gap-4 md:grid-cols-2"
-            >
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Brand Overview</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Campaign Objective</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Target Audience</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Scope of Work</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Deliverables</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Timeline</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Budget</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle class="text-sm">Mandatory Requirements</CardTitle></CardHeader>
-                    <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></CardContent>
-                </Card>
-            </div>
+            <Tabs v-if="analysis && !form.processing" default-value="scope" class="space-y-4">
+                <TabsList class="border-b">
+                    <TabsTrigger value="scope">Scope</TabsTrigger>
+                    <TabsTrigger value="campaign">Campaign</TabsTrigger>
+                    <TabsTrigger value="additional">Additional Info</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="scope">
+                    <Card>
+                        <CardHeader><CardTitle class="text-sm">Scope of Work</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></CardContent>
+                    </Card>
+                    <Card class="mt-4">
+                        <CardHeader><CardTitle class="text-sm">Deliverables</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></CardContent>
+                    </Card>
+                    <Card class="mt-4">
+                        <CardHeader><CardTitle class="text-sm">Mandatory Requirements</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="campaign">
+                    <Card>
+                        <CardHeader><CardTitle class="text-sm">Target Audience</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></CardContent>
+                    </Card>
+                    <Card class="mt-4">
+                        <CardHeader><CardTitle class="text-sm">Timeline</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></CardContent>
+                    </Card>
+                    <Card class="mt-4">
+                        <CardHeader><CardTitle class="text-sm">Budget</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="additional">
+                    <Card>
+                        <CardHeader><CardTitle class="text-sm">Brand Overview</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></CardContent>
+                    </Card>
+                    <Card class="mt-4">
+                        <CardHeader><CardTitle class="text-sm">Campaign Objective</CardTitle></CardHeader>
+                        <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
 
             <Card v-if="!analysis || isProcessing">
                 <CardHeader>
