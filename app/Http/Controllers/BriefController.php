@@ -85,17 +85,40 @@ class BriefController extends Controller
         $this->authorize('view', $brief);
 
         $brief = $this->briefs->find($brief->id) ?? $brief;
+        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource']);
 
         return Inertia::render('briefs/Show', [
             'brief' => BriefResource::make($brief)->resolve(),
             'analysis' => $brief->latestAnalysis
                 ? AiAnalysisResource::make($brief->latestAnalysis)->resolve()
                 : null,
-            'pitchAssignments' => $brief->pitchAssignments->map(fn ($assignment) => [
-                'id' => $assignment->id,
-                'status' => $assignment->status?->value,
-                'confidence' => $assignment->confidence,
-                'business_unit' => $assignment->businessUnit?->name,
+            'pitchAssignments' => $brief->pitchAssignments->map(function ($assignment) use ($brief) {
+                // Try to find matching recommendation by business_unit_id first, then by name
+                $recommendation = $brief->latestAnalysis?->recommendations
+                    ->where('business_unit_id', $assignment->business_unit_id)
+                    ->first();
+
+                // Fallback: match by business unit name if not found by ID
+                if (! $recommendation && $assignment->businessUnit?->name) {
+                    $recommendation = $brief->latestAnalysis?->recommendations
+                        ->firstWhere('business_unit_name', $assignment->businessUnit->name);
+                }
+
+                return [
+                    'id' => $assignment->id,
+                    'status' => $assignment->status?->value,
+                    'confidence' => $assignment->confidence,
+                    'business_unit' => $assignment->businessUnit?->name,
+                    'matched_services' => $recommendation?->matched_services ?? [],
+                    'recommendation_confidence' => $recommendation?->confidence,
+                ];
+            }),
+            'resourceAllocations' => $brief->resourceAllocations->map(fn ($allocation) => [
+                'id' => $allocation->id,
+                'resource_name' => $allocation->resource?->name,
+                'estimated_hours' => $allocation->estimated_hours,
+                'estimated_workload_percent' => $allocation->estimated_workload_percent,
+                'estimated_duration_days' => $allocation->estimated_duration_days,
             ]),
         ]);
     }

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { FileDown, Sparkles } from 'lucide-vue-next';
-import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { FileDown, Sparkles, FileText, Brain, Building2, CheckCircle } from 'lucide-vue-next';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { dashboard } from '@/routes';
 import { analyze, index } from '@/routes/briefs';
@@ -49,6 +50,15 @@ const props = defineProps<{
         status: string;
         confidence: number;
         business_unit?: string;
+        matched_services?: string[];
+        recommendation_confidence?: number;
+    }>;
+    resourceAllocations?: Array<{
+        id: string;
+        resource_name?: string;
+        estimated_hours?: number;
+        estimated_workload_percent?: number;
+        estimated_duration_days?: number;
     }>;
 }>();
 
@@ -58,12 +68,102 @@ const form = useForm({
 
 const contentRef = ref<HTMLElement | null>(null);
 
+// Polling state
+const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
+const currentStep = ref(0);
+
+const analysisSteps = [
+    { id: 'parsing', label: 'Parsing brief document', icon: FileText },
+    { id: 'analyzing', label: 'Analyzing content with AI', icon: Brain },
+    { id: 'matching', label: 'Matching with business units', icon: Building2 },
+    { id: 'generating', label: 'Generating recommendations', icon: Sparkles },
+    { id: 'finalizing', label: 'Finalizing report', icon: CheckCircle },
+];
+
+const isProcessing = computed(() => {
+    return props.brief.ai_status === 'pending' || props.brief.ai_status === 'processing';
+});
+
+const processingMessage = computed(() => {
+    if (props.brief.ai_status === 'failed') {
+        return 'Analysis failed';
+    }
+
+    const messages = [
+        'Extracting information from the brief document...',
+        'AI is analyzing the content and context...',
+        'Matching requirements with business units...',
+        'Generating personalized recommendations...',
+        'Finalizing your analysis report...',
+    ];
+
+    return messages[currentStep.value] || messages[0];
+});
+
+const currentStepData = computed(() => analysisSteps[currentStep.value]);
+const progressValue = computed(() => ((currentStep.value + 1) / analysisSteps.length) * 100);
+
 function rerunAnalysis(advanced = false): void {
     form.advanced = advanced;
     form.post(analyze(props.brief.id).url, {
         preserveScroll: true,
     });
 }
+
+function startPolling(): void {
+    if (pollingInterval.value) {
+        return;
+    }
+
+    pollingInterval.value = setInterval(() => {
+        // Rotate through steps for animation
+        currentStep.value = (currentStep.value + 1) % analysisSteps.length;
+
+        // Use Inertia's visit to reload data
+        if (isProcessing.value) {
+            router.visit(window.location.pathname, {
+                method: 'get',
+                only: ['brief', 'analysis', 'pitchAssignments'],
+                preserveScroll: true,
+                onFinish: () => {
+                    // Stop polling if analysis is complete
+                    if (!isProcessing.value && pollingInterval.value) {
+                        clearInterval(pollingInterval.value);
+                        pollingInterval.value = null;
+                    }
+                },
+            });
+        }
+    }, 3000);
+}
+
+function stopPolling(): void {
+    if (pollingInterval.value) {
+        clearInterval(pollingInterval.value);
+        pollingInterval.value = null;
+    }
+}
+
+function shouldPoll(): boolean {
+    return isProcessing.value || form.processing;
+}
+
+onMounted(() => {
+    if (shouldPoll()) {
+        startPolling();
+    }
+});
+
+onUnmounted(() => {
+    stopPolling();
+});
+
+// Watch for form processing state changes (Re-run button clicked)
+watch(() => form.processing, (processing) => {
+    if (processing && !pollingInterval.value) {
+        startPolling();
+    }
+});
 
 async function exportPDF(): Promise<void> {
     if (!contentRef.value) {
@@ -164,7 +264,7 @@ defineOptions({
             </div>
 
             <div ref="contentRef">
-                <Card v-if="analysis">
+                <Card v-if="analysis && !form.processing" class="mb-5">
                     <CardHeader>
                         <CardTitle>Executive Summary</CardTitle>
                     </CardHeader>
@@ -174,7 +274,7 @@ defineOptions({
                 </Card>
 
                 <div
-                    v-if="analysis"
+                    v-if="analysis && !form.processing"
                     class="grid gap-4 md:grid-cols-2"
                 >
                     <Card>
@@ -212,10 +312,54 @@ defineOptions({
                 </div>
             </div>
 
-            <Card v-if="!analysis">
-                <CardContent class="py-8 text-center text-sm text-muted-foreground">
-                    <p v-if="brief.ai_error" class="text-destructive">{{ brief.ai_error }}</p>
-                    <p v-else>AI analysis is processing. Refresh shortly.</p>
+            <Card v-if="isProcessing || form.processing">
+                <CardHeader>
+                    <CardTitle class="flex items-center gap-2">
+                        <Spinner class="size-4" />
+                        AI Analysis in Progress
+                    </CardTitle>
+                </CardHeader>
+                <CardContent class="space-y-6">
+                    <div class="space-y-2">
+                        <p class="text-sm font-medium">{{ processingMessage }}</p>
+                        <Progress :value="progressValue" class="w-full" />
+                    </div>
+
+                    <div class="space-y-3">
+                        <div
+                            v-for="(step, index) in analysisSteps"
+                            :key="step.id"
+                            class="flex items-center gap-3 text-sm"
+                            :class="index <= currentStep ? 'text-primary' : 'text-muted-foreground'"
+                        >
+                            <div
+                                class="flex size-6 items-center justify-center rounded-full"
+                                :class="index < currentStep ? 'bg-primary text-primary-foreground' : index === currentStep ? 'bg-primary/20' : 'bg-muted'"
+                            >
+                                <component
+                                    :is="step.icon"
+                                    v-if="index < currentStep"
+                                    class="size-3"
+                                />
+                                <span v-else-if="index === currentStep" class="text-xs">{{ index + 1 }}</span>
+                                <span v-else class="text-xs">{{ index + 1 }}</span>
+                            </div>
+                            <span :class="index === currentStep ? 'font-medium' : ''">
+                                {{ step.label }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-muted-foreground text-center">
+                        This usually takes 30-60 seconds. You can wait here or come back later.
+                    </p>
+                </CardContent>
+            </Card>
+
+            <Card v-if="!analysis && brief.ai_status === 'failed'">
+                <CardContent class="py-8 text-center">
+                    <p class="text-destructive font-medium mb-2">Analysis Failed</p>
+                    <p class="text-sm text-muted-foreground">{{ brief.ai_error || 'An unknown error occurred.' }}</p>
                 </CardContent>
             </Card>
         </div>
@@ -252,37 +396,97 @@ defineOptions({
                 </CardContent>
             </Card>
 
-            <Card v-if="analysis?.recommendations?.length">
+            <Card v-if="analysis?.recommendations?.length && !form.processing">
                 <CardHeader>
-                    <CardTitle class="text-sm">Recommended Units</CardTitle>
+                    <CardTitle class="text-sm">AI Recommended Units</CardTitle>
                 </CardHeader>
-                <CardContent class="space-y-3">
+                <CardContent class="space-y-4">
                     <div
                         v-for="rec in analysis.recommendations"
                         :key="rec.business_unit_name"
-                        class="rounded-lg border p-3"
+                        class="rounded-lg border p-4"
                     >
-                        <div class="flex justify-between font-medium">
-                            <span>{{ rec.business_unit_name }}</span>
-                            <span>{{ rec.confidence }}%</span>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-semibold">{{ rec.business_unit_name }}</span>
+                            <Badge variant="secondary">{{ rec.confidence }}% Match</Badge>
                         </div>
-                        <p class="mt-1 text-xs text-muted-foreground">{{ rec.reasoning }}</p>
+                        <p class="text-xs text-muted-foreground mb-3">{{ rec.reasoning }}</p>
+                        <div v-if="rec.matched_services?.length" class="space-y-1">
+                            <span class="text-xs font-medium text-muted-foreground">Matched Services:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <Badge
+                                    v-for="service in rec.matched_services"
+                                    :key="service"
+                                    variant="outline"
+                                    class="text-xs"
+                                >
+                                    {{ service }}
+                                </Badge>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <Card v-if="pitchAssignments.length">
+            <Card v-if="pitchAssignments.length && !form.processing">
                 <CardHeader>
                     <CardTitle class="text-sm">Pitch Assignments</CardTitle>
                 </CardHeader>
-                <CardContent class="space-y-2 text-sm">
+                <CardContent class="space-y-4">
                     <div
                         v-for="pitch in pitchAssignments"
                         :key="pitch.id"
-                        class="flex justify-between"
+                        class="rounded-lg border p-3"
                     >
-                        <span>{{ pitch.business_unit }}</span>
-                        <Badge variant="outline">{{ pitch.status }}</Badge>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="font-medium">{{ pitch.business_unit }}</span>
+                                <span class="ml-2 text-xs text-muted-foreground">
+                                    ({{ pitch.confidence }}% AI confidence)
+                                </span>
+                            </div>
+                            <Badge variant="outline">{{ pitch.status }}</Badge>
+                        </div>
+                        <div v-if="pitch.matched_services?.length" class="space-y-1">
+                            <span class="text-xs font-medium text-muted-foreground">Services to provide:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <Badge
+                                    v-for="service in pitch.matched_services"
+                                    :key="service"
+                                    variant="secondary"
+                                    class="text-xs"
+                                >
+                                    {{ service }}
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card v-if="resourceAllocations?.length && !form.processing">
+                <CardHeader>
+                    <CardTitle class="text-sm">Recommended Resources</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-3">
+                        <div
+                            v-for="resource in resourceAllocations"
+                            :key="resource.id"
+                            class="flex items-center justify-between py-2 border-b last:border-0"
+                        >
+                            <div>
+                                <span class="font-medium text-sm">{{ resource.resource_name }}</span>
+                                <div class="text-xs text-muted-foreground mt-1">
+                                    <span v-if="resource.estimated_hours">{{ resource.estimated_hours }} hours</span>
+                                    <span v-if="resource.estimated_workload_percent"> • {{ resource.estimated_workload_percent }}% workload</span>
+                                    <span v-if="resource.estimated_duration_days"> • {{ resource.estimated_duration_days }} days</span>
+                                </div>
+                            </div>
+                            <Badge variant="outline" class="text-xs">
+                                {{ resource.estimated_duration_days ?? '-' }} days
+                            </Badge>
+                        </div>
                     </div>
                 </CardContent>
             </Card>

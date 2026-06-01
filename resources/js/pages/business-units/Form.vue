@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index, store, update } from '@/routes/business-units';
 import { dashboard } from '@/routes';
+import { index, store, update } from '@/routes/business-units';
 
 type Category = { id: string; name: string };
 type User = { id: string; name: string; role: string };
@@ -22,12 +22,22 @@ const props = defineProps<{
         category_id?: string;
         pic?: { id: string; name: string };
         services?: Service[];
+        is_active?: boolean;
     } | null;
     categories: Category[];
     users: User[];
 }>();
 
 const isEdit = computed(() => !!props.businessUnit?.id);
+
+// Form state
+const formData = ref({
+    name: props.businessUnit?.name ?? '',
+    description: props.businessUnit?.description ?? '',
+    category_id: props.businessUnit?.category_id ?? '',
+    pic_user_id: props.businessUnit?.pic?.id ?? '',
+    is_active: props.businessUnit?.is_active ?? true,
+});
 
 // Services management
 const services = ref<Service[]>(
@@ -46,17 +56,22 @@ function removeService(index: number) {
     }
 }
 
-watchForm();
-
-function watchForm() {
-    // Keep services in sync with props
-}
-
+// Sync formData when businessUnit prop changes (for edit mode)
 watch(
-    () => props.businessUnit?.services,
-    (newServices) => {
-        if (newServices?.length) {
-            services.value = [...newServices];
+    () => props.businessUnit,
+    (unit) => {
+        if (unit) {
+            formData.value = {
+                name: unit.name ?? '',
+                description: unit.description ?? '',
+                category_id: unit.category_id ?? '',
+                pic_user_id: unit.pic?.id ?? '',
+                is_active: unit.is_active ?? true,
+            };
+
+            if (unit.services?.length) {
+                services.value = [...unit.services];
+            }
         }
     },
     { immediate: true }
@@ -74,7 +89,7 @@ setLayoutProps({
 });
 
 function handleSubmit() {
-    // Services are submitted via form data
+    // Services are submitted via form - no need to manually handle
 }
 </script>
 
@@ -99,7 +114,7 @@ function handleSubmit() {
                         <Input
                             id="name"
                             name="name"
-                            :default-value="businessUnit?.name"
+                            v-model="formData.name"
                             required
                         />
                         <InputError :message="errors.name" />
@@ -110,6 +125,7 @@ function handleSubmit() {
                         <select
                             id="category_id"
                             name="category_id"
+                            v-model="formData.category_id"
                             class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                         >
                             <option value="">Select category</option>
@@ -117,7 +133,6 @@ function handleSubmit() {
                                 v-for="cat in categories"
                                 :key="cat.id"
                                 :value="cat.id"
-                                :selected="cat.id === businessUnit?.category_id"
                             >
                                 {{ cat.name }}
                             </option>
@@ -130,6 +145,7 @@ function handleSubmit() {
                         <select
                             id="pic_user_id"
                             name="pic_user_id"
+                            v-model="formData.pic_user_id"
                             class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                         >
                             <option value="">Select PIC</option>
@@ -137,7 +153,6 @@ function handleSubmit() {
                                 v-for="user in users"
                                 :key="user.id"
                                 :value="user.id"
-                                :selected="user.id === businessUnit?.pic?.id"
                             >
                                 {{ user.name }} ({{ user.role }})
                             </option>
@@ -150,9 +165,9 @@ function handleSubmit() {
                         <textarea
                             id="description"
                             name="description"
+                            v-model="formData.description"
                             rows="4"
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                            :default-value="businessUnit?.description"
                         />
                         <InputError :message="errors.description" />
                     </div>
@@ -200,8 +215,8 @@ function handleSubmit() {
                             type="checkbox"
                             id="is_active"
                             name="is_active"
+                            v-model="formData.is_active"
                             value="1"
-                            :checked="businessUnit?.id ? true : true"
                             class="size-4 rounded border-input"
                         />
                         <Label for="is_active" class="text-sm font-normal">Active</Label>
@@ -211,7 +226,7 @@ function handleSubmit() {
                         type="submit"
                         :disabled="processing"
                     >
-                        Save
+                        {{ isEdit ? 'Update' : 'Create' }}
                     </Button>
                 </Form>
             </CardContent>

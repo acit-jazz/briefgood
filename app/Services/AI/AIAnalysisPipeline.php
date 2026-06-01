@@ -10,6 +10,7 @@ use App\Enums\PitchAssignmentStatus;
 use App\Events\BriefAnalysisCompleted;
 use App\Events\BriefAnalysisFailed;
 use App\Events\BriefAnalysisStarted;
+use App\Mail\PitchAssignmentCreated;
 use App\Models\Activity;
 use App\Models\AiAnalysisResult;
 use App\Models\Brief;
@@ -18,6 +19,8 @@ use App\Models\PitchAssignment;
 use App\Models\Resource;
 use App\Models\ResourceAllocation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Smalot\PdfParser\Parser as PdfParser;
@@ -191,7 +194,7 @@ class AIAnalysisPipeline
                 continue;
             }
 
-            PitchAssignment::query()->updateOrCreate(
+            $assignment = PitchAssignment::query()->updateOrCreate(
                 [
                     'brief_id' => $brief->id,
                     'business_unit_id' => $unit->id,
@@ -203,8 +206,40 @@ class AIAnalysisPipeline
                     'status' => PitchAssignmentStatus::Pending,
                 ],
             );
+
+            // Send email notification to PIC if they have an email
+            $this->sendAssignmentNotification($assignment, $brief);
         }
 
         $brief->update(['status' => BriefStatus::Assigned]);
+    }
+
+    protected function sendAssignmentNotification(PitchAssignment $assignment, Brief $brief): void
+    {
+        if (! $assignment->pic || ! $assignment->pic->email) {
+            Log::info('PitchAssignment email skipped: no PIC email', [
+                'assignment_id' => $assignment->id,
+                'brief_id' => $brief->id,
+            ]);
+
+            return;
+        }
+
+        try {
+            Mail::to($assignment->pic->email)->send(new PitchAssignmentCreated($assignment, $brief));
+
+            Log::info('PitchAssignment email sent', [
+                'assignment_id' => $assignment->id,
+                'pic_email' => $assignment->pic->email,
+                'brief_id' => $brief->id,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to send PitchAssignment email', [
+                'assignment_id' => $assignment->id,
+                'pic_email' => $assignment->pic->email,
+                'brief_id' => $brief->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
