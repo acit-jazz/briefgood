@@ -188,9 +188,12 @@ class AIAnalysisPipeline
     protected function distributePitchAssignments(Brief $brief, AiAnalysisResult $analysis): void
     {
         foreach ($analysis->recommendations as $recommendation) {
+            // Strip category suffix like " (Brand Strategy)" from unit name
+            $unitNameClean = preg_replace('/\s*\(.*\)$/', '', $recommendation->business_unit_name);
             $unit = BusinessUnit::query()
                 ->where('id', $recommendation->business_unit_id)
-                ->orWhere('name', $recommendation->business_unit_name)
+                ->orWhere('name', $unitNameClean)
+                ->orWhere('slug', Str::slug($unitNameClean))
                 ->first();
 
             if (! $unit) {

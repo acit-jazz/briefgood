@@ -17,15 +17,17 @@ class BusinessMatchingService
             ->delete();
 
         foreach ($result->recommendedBusinessUnits as $recommendation) {
+            // Strip category suffix like " (Brand Strategy)" from unit name
+            $unitNameClean = preg_replace('/\s*\(.*\)$/', '', $recommendation['name']);
             $unit = BusinessUnit::query()
-                ->where('name', $recommendation['name'])
-                ->orWhere('slug', Str::slug($recommendation['name']))
+                ->where('name', $unitNameClean)
+                ->orWhere('slug', Str::slug($unitNameClean))
                 ->first();
 
             AiRecommendation::query()->create([
                 'ai_analysis_result_id' => $analysis->id,
                 'business_unit_id' => $unit?->id,
-                'business_unit_name' => $recommendation['name'],
+                'business_unit_name' => $unitNameClean,
                 'confidence' => $recommendation['confidence'],
                 'matched_services' => $recommendation['services'] ?? [],
                 'reasoning' => $recommendation['reasoning'] ?? null,

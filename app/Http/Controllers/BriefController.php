@@ -85,7 +85,7 @@ class BriefController extends Controller
         $this->authorize('view', $brief);
 
         $brief = $this->briefs->find($brief->id) ?? $brief;
-        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource']);
+        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource', 'pitchAssignments.businessUnit']);
 
         return Inertia::render('briefs/Show', [
             'brief' => BriefResource::make($brief)->resolve(),
@@ -128,7 +128,7 @@ class BriefController extends Controller
         $this->authorize('view', $brief);
 
         $brief = $this->briefs->find($brief->id) ?? $brief;
-        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource']);
+        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource', 'pitchAssignments.businessUnit']);
 
         return Inertia::render('briefs/Preview', [
             'brief' => BriefResource::make($brief)->resolve(),

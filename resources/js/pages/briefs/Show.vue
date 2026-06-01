@@ -24,11 +24,11 @@ type Analysis = {
     pitch_complexity_score?: number;
     ai_confidence_score?: number;
     ai_reasoning?: string;
-    recommendations?: Array<{
-        business_unit_name: string;
+    recommended_business_units?: Array<{
+        name: string;
         confidence: number;
         reasoning?: string;
-        matched_services?: string[];
+        services?: string[];
     }>;
 };
 
@@ -60,6 +60,7 @@ const props = defineProps<{
         estimated_duration_days?: number;
     }>;
 }>();
+console.log('pitchAssignments',props.pitchAssignments);
 
 const form = useForm({
     advanced: false,
@@ -197,7 +198,7 @@ defineOptions({
                 </div>
             </div>
 
-            <Card v-if="analysis && !form.processing" class="mb-5">
+            <Card v-if="analysis && !isProcessing" class="mb-5">
                 <CardHeader>
                     <CardTitle>Executive Summary</CardTitle>
                 </CardHeader>
@@ -206,11 +207,13 @@ defineOptions({
                 </CardContent>
             </Card>
 
-            <Tabs v-if="analysis && !form.processing" default-value="scope" class="space-y-4">
+            <Tabs v-if="analysis && !isProcessing" default-value="scope" class="space-y-4">
                 <TabsList class="border-b">
                     <TabsTrigger value="scope">Scope</TabsTrigger>
                     <TabsTrigger value="campaign">Campaign</TabsTrigger>
                     <TabsTrigger value="additional">Additional Info</TabsTrigger>
+                    <TabsTrigger value="ai-recommended-units">AI Recommended Units</TabsTrigger>
+                    <TabsTrigger value="ai-recommended-resources">Recommended Resources</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="scope">
@@ -253,6 +256,67 @@ defineOptions({
                         <CardContent class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></CardContent>
                     </Card>
                 </TabsContent>
+                <TabsContent value="ai-recommended-units">
+                    <Card v-if="analysis?.recommended_business_units?.length && !isProcessing">
+                        <CardHeader>
+                            <CardTitle class="text-sm">AI Recommended Units</CardTitle>
+                        </CardHeader>
+                        <CardContent class="space-y-4">
+                            <div
+                                v-for="rec in analysis.recommended_business_units"
+                                :key="rec.name"
+                                class="rounded-lg border p-4"
+                            >
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="font-semibold">{{ rec.name }}</span>
+                                    <Badge variant="secondary">{{ rec.confidence }}% Match</Badge>
+                                </div>
+                                <p class="text-xs text-muted-foreground mb-3">{{ rec.reasoning }}</p>
+                                <div v-if="rec.services?.length" class="space-y-1">
+                                    <span class="text-xs font-medium text-muted-foreground">Matched Services:</span>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <Badge
+                                            v-for="service in rec.services"
+                                            :key="service"
+                                            variant="outline"
+                                            class="text-xs"
+                                        >
+                                            {{ service }}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="ai-recommended-resources">
+                    <Card v-if="resourceAllocations?.length && !isProcessing">
+                        <CardHeader>
+                            <CardTitle class="text-sm">Recommended Resources</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="space-y-3">
+                                <div
+                                    v-for="resource in resourceAllocations"
+                                    :key="resource.id"
+                                    class="flex items-center justify-between py-2 border-b last:border-0"
+                                >
+                                    <div>
+                                        <span class="font-medium text-sm">{{ resource.resource_name }}</span>
+                                        <div class="text-xs text-muted-foreground mt-1">
+                                            <span v-if="resource.estimated_hours">{{ resource.estimated_hours }} hours</span>
+                                            <span v-if="resource.estimated_workload_percent"> • {{ resource.estimated_workload_percent }}% workload</span>
+                                            <span v-if="resource.estimated_duration_days"> • {{ resource.estimated_duration_days }} days</span>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" class="text-xs">
+                                        {{ resource.estimated_duration_days ?? '-' }} days
+                                    </Badge>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
             </Tabs>
 
             <Card v-if="!analysis || isProcessing">
@@ -266,31 +330,6 @@ defineOptions({
                     <div class="space-y-2">
                         <p class="text-sm font-medium">{{ processingMessage }}</p>
                         <Progress :value="progressValue" class="w-full" />
-                    </div>
-
-                    <div class="space-y-3">
-                        <div
-                            v-for="(step, index) in analysisSteps"
-                            :key="step.id"
-                            class="flex items-center gap-3 text-sm"
-                            :class="index <= currentStep ? 'text-primary' : 'text-muted-foreground'"
-                        >
-                            <div
-                                class="flex size-6 items-center justify-center rounded-full"
-                                :class="index < currentStep ? 'bg-primary text-primary-foreground' : index === currentStep ? 'bg-primary/20' : 'bg-muted'"
-                            >
-                                <component
-                                    :is="step.icon"
-                                    v-if="index < currentStep"
-                                    class="size-3"
-                                />
-                                <span v-else-if="index === currentStep" class="text-xs">{{ index + 1 }}</span>
-                                <span v-else class="text-xs">{{ index + 1 }}</span>
-                            </div>
-                            <span :class="index === currentStep ? 'font-medium' : ''">
-                                {{ step.label }}
-                            </span>
-                        </div>
                     </div>
 
                     <p class="text-xs text-muted-foreground text-center">
@@ -339,39 +378,7 @@ defineOptions({
                 </CardContent>
             </Card>
 
-            <Card v-if="analysis?.recommendations?.length && !form.processing">
-                <CardHeader>
-                    <CardTitle class="text-sm">AI Recommended Units</CardTitle>
-                </CardHeader>
-                <CardContent class="space-y-4">
-                    <div
-                        v-for="rec in analysis.recommendations"
-                        :key="rec.business_unit_name"
-                        class="rounded-lg border p-4"
-                    >
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="font-semibold">{{ rec.business_unit_name }}</span>
-                            <Badge variant="secondary">{{ rec.confidence }}% Match</Badge>
-                        </div>
-                        <p class="text-xs text-muted-foreground mb-3">{{ rec.reasoning }}</p>
-                        <div v-if="rec.matched_services?.length" class="space-y-1">
-                            <span class="text-xs font-medium text-muted-foreground">Matched Services:</span>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                <Badge
-                                    v-for="service in rec.matched_services"
-                                    :key="service"
-                                    variant="outline"
-                                    class="text-xs"
-                                >
-                                    {{ service }}
-                                </Badge>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card v-if="pitchAssignments.length && !form.processing">
+            <Card v-if="pitchAssignments.length && !isProcessing">
                 <CardHeader>
                     <CardTitle class="text-sm">Pitch Assignments</CardTitle>
                 </CardHeader>
@@ -402,33 +409,6 @@ defineOptions({
                                     {{ service }}
                                 </Badge>
                             </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card v-if="resourceAllocations?.length && !form.processing">
-                <CardHeader>
-                    <CardTitle class="text-sm">Recommended Resources</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div class="space-y-3">
-                        <div
-                            v-for="resource in resourceAllocations"
-                            :key="resource.id"
-                            class="flex items-center justify-between py-2 border-b last:border-0"
-                        >
-                            <div>
-                                <span class="font-medium text-sm">{{ resource.resource_name }}</span>
-                                <div class="text-xs text-muted-foreground mt-1">
-                                    <span v-if="resource.estimated_hours">{{ resource.estimated_hours }} hours</span>
-                                    <span v-if="resource.estimated_workload_percent"> • {{ resource.estimated_workload_percent }}% workload</span>
-                                    <span v-if="resource.estimated_duration_days"> • {{ resource.estimated_duration_days }} days</span>
-                                </div>
-                            </div>
-                            <Badge variant="outline" class="text-xs">
-                                {{ resource.estimated_duration_days ?? '-' }} days
-                            </Badge>
                         </div>
                     </div>
                 </CardContent>
