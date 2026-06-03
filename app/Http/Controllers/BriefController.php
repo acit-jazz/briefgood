@@ -154,6 +154,13 @@ class BriefController extends Controller
                     'matched_services' => $recommendation?->matched_services ?? [],
                 ];
             }),
+            'resourceAllocations' => $brief->resourceAllocations->map(fn ($allocation) => [
+                'id' => $allocation->id,
+                'resource_name' => $allocation->resource?->name,
+                'estimated_hours' => $allocation->estimated_hours,
+                'estimated_workload_percent' => $allocation->estimated_workload_percent,
+                'estimated_duration_days' => $allocation->estimated_duration_days,
+            ]),
         ]);
     }
 

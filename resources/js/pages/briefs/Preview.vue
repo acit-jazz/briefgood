@@ -47,6 +47,13 @@ const props = defineProps<{
         business_unit?: string;
         matched_services?: string[];
     }>;
+    resourceAllocations?: Array<{
+        id: string;
+        resource_name?: string;
+        estimated_hours?: number;
+        estimated_workload_percent?: number;
+        estimated_duration_days?: number;
+    }>;
 }>();
 
 const contentRef = ref<HTMLElement | null>(null);
@@ -165,8 +172,7 @@ function goBack(): void {
                     <CardHeader>
                         <CardTitle>Executive Summary</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p class="whitespace-pre-wrap">{{ analysis.executive_summary }}</p>
+                    <CardContent v-html="analysis.executive_summary">
                     </CardContent>
                 </Card>
 
@@ -258,32 +264,28 @@ function goBack(): void {
                 </Card>
 
                 <!-- Pitch Assignments -->
-                <Card v-if="pitchAssignments.length" class="mb-6">
+                <Card v-if="analysis?.recommended_business_units?.length && !isProcessing" class="mb-6">
                     <CardHeader>
-                        <CardTitle>Pitch Assignments</CardTitle>
+                        <CardTitle class="text-sm">AI Recommended Units</CardTitle>
                     </CardHeader>
                     <CardContent class="space-y-4">
                         <div
-                            v-for="pitch in pitchAssignments"
-                            :key="pitch.id"
-                            class="rounded-lg border p-3"
+                            v-for="rec in analysis.recommended_business_units"
+                            :key="rec.name"
+                            class="rounded-lg border p-4"
                         >
                             <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="font-medium">{{ pitch.business_unit }}</span>
-                                    <span class="ml-2 text-xs text-muted-foreground">
-                                        ({{ pitch.confidence }}% AI confidence)
-                                    </span>
-                                </div>
-                                <Badge variant="outline">{{ pitch.status }}</Badge>
+                                <span class="font-semibold">{{ rec.name }}</span>
+                                <Badge variant="secondary">{{ rec.confidence }}% Match</Badge>
                             </div>
-                            <div v-if="pitch.matched_services?.length" class="space-y-1">
-                                <span class="text-xs font-medium text-muted-foreground">Services to provide:</span>
-                                <div class="flex flex-wrap gap-1">
+                            <p class="text-xs text-muted-foreground mb-3">{{ rec.reasoning }}</p>
+                            <div v-if="rec.services?.length" class="space-y-1">
+                                <span class="text-xs font-medium text-muted-foreground">Matched Services:</span>
+                                <div class="flex flex-wrap gap-1 mt-1">
                                     <Badge
-                                        v-for="service in pitch.matched_services"
+                                        v-for="service in rec.services"
                                         :key="service"
-                                        variant="secondary"
+                                        variant="outline"
                                         class="text-xs"
                                     >
                                         {{ service }}
@@ -294,6 +296,32 @@ function goBack(): void {
                     </CardContent>
                 </Card>
 
+                <Card v-if="resourceAllocations?.length && !isProcessing">
+                    <CardHeader>
+                        <CardTitle class="text-sm">Recommended Resources</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-3">
+                            <div
+                                v-for="resource in resourceAllocations"
+                                :key="resource.id"
+                                class="flex items-center justify-between py-2 border-b last:border-0"
+                            >
+                                <div>
+                                    <span class="font-medium text-sm">{{ resource.resource_name }}</span>
+                                    <div class="text-xs text-muted-foreground mt-1">
+                                        <span v-if="resource.estimated_hours">{{ resource.estimated_hours }} hours</span>
+                                        <span v-if="resource.estimated_workload_percent"> • {{ resource.estimated_workload_percent }}% workload</span>
+                                        <span v-if="resource.estimated_duration_days"> • {{ resource.estimated_duration_days }} days</span>
+                                    </div>
+                                </div>
+                                <Badge variant="outline" class="text-xs">
+                                    {{ resource.estimated_duration_days ?? '-' }} days
+                                </Badge>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
                 <!-- Footer -->
                 <div class="mt-8 border-t pt-4 text-center text-xs text-gray-400">
                     Generated by BriefGood AI Analysis

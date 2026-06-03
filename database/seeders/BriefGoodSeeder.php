@@ -253,16 +253,6 @@ class BriefGoodSeeder extends Seeder
                     'Website maintenance' => 72,
                 ],
             ],
-            [
-                'name' => 'DataPulse',
-                'category' => 'Analytics & Data',
-                'description' => 'Data analytics and business intelligence agency helping brands make data-driven decisions.',
-                'services' => [
-                    'Analytics setup' => 92,        // Core expertise
-                    'Data visualization' => 90,    // Core expertise
-                    'SEO optimization' => 78,
-                ],
-            ],
         ];
 
         foreach ($units as $unitData) {
