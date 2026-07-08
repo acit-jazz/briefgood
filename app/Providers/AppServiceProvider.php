@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\AIProviderInterface;
+use App\Services\AI\AIServiceFactory;
 use App\Services\AI\GeminiService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -17,6 +18,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(AIServiceFactory::class, function ($app) {
+            return new AIServiceFactory();
+        });
+
+        // Keep the old binding for backward compatibility - but AIOrchestratorService
+        // will use AIServiceFactory directly
         $this->app->bind(
             AIProviderInterface::class,
             GeminiService::class,

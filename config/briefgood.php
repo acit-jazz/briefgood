@@ -13,6 +13,18 @@ return [
             'default_model' => env('BRIEFGOOD_OPENROUTER_MODEL', 'minimax/minimax-grammarly-sonnet-4-20250514'),
             'advanced_model' => env('BRIEFGOOD_OPENROUTER_ADVANCED_MODEL', 'minimax/minimax-grammarly-sonnet-4-20250514'),
         ],
+        'groq' => [
+            'default_model' => env('BRIEFGOOD_GROQ_MODEL', 'llama-3.3-70b-versatile'),
+            'advanced_model' => env('BRIEFGOOD_GROQ_ADVANCED_MODEL', 'llama-3.3-70b-versatile'),
+        ],
+        'openai' => [
+            'default_model' => env('BRIEFGOOD_OPENAI_MODEL', 'gpt-4o-mini'),
+            'advanced_model' => env('BRIEFGOOD_OPENAI_ADVANCED_MODEL', 'gpt-4o'),
+        ],
+        'anthropic' => [
+            'default_model' => env('BRIEFGOOD_ANTHROPIC_MODEL', 'claude-haiku-4-5-20251001'),
+            'advanced_model' => env('BRIEFGOOD_ANTHROPIC_ADVANCED_MODEL', 'claude-opus-4-7'),
+        ],
     ],
 
     'uploads' => [

@@ -32,9 +32,11 @@ class AIAnalysisPipeline
         protected BusinessMatchingService $matchingService,
     ) {}
 
-    public function run(Brief $brief, bool $useAdvancedModel = false): AiAnalysisResult
+    public function run(Brief $brief, bool $useAdvancedModel = false, ?string $provider = null): AiAnalysisResult
     {
         event(new BriefAnalysisStarted($brief));
+
+        $provider = $provider ?? $brief->ai_model ?? config('ai.provider', 'gemini');
 
         $brief->update([
             'ai_status' => AiAnalysisStatus::Processing,
@@ -43,7 +45,7 @@ class AIAnalysisPipeline
 
         try {
             $input = $this->buildInput($brief);
-            $result = $this->orchestrator->analyze($input, $useAdvancedModel);
+            $result = $this->orchestrator->analyze($input, $useAdvancedModel, $provider);
 
             return DB::transaction(function () use ($brief, $result): AiAnalysisResult {
                 $analysis = $this->persistAnalysis($brief, $result);

@@ -64,6 +64,7 @@ class BriefController extends Controller
             'primary_file_size' => $file->getSize(),
             'status' => BriefStatus::New,
             'ai_status' => AiAnalysisStatus::Pending,
+            'ai_model' => $validated['ai_model'] ?? config('ai.provider', 'gemini'),
         ]);
 
         Activity::query()->create([
@@ -76,7 +77,7 @@ class BriefController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        AnalyzeBriefJob::dispatch($brief);
+        AnalyzeBriefJob::dispatch($brief, false, $brief->ai_model);
 
         return redirect()->route('briefs.show', $brief);
     }
@@ -168,7 +169,7 @@ class BriefController extends Controller
     {
         $this->authorize('analyze', $brief);
 
-        AnalyzeBriefJob::dispatch($brief, $request->boolean('advanced'));
+        AnalyzeBriefJob::dispatch($brief, $request->boolean('advanced'), $brief->ai_model);
 
         return back()->with('success', 'AI analysis has been queued.');
     }

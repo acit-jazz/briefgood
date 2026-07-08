@@ -30,6 +30,7 @@ class Brief extends Model
         'notes',
         'status',
         'ai_status',
+        'ai_model',
         'ai_error',
         'latest_analysis_id',
         'primary_file_name',

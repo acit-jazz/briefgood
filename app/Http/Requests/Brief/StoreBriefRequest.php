@@ -28,6 +28,7 @@ class StoreBriefRequest extends FormRequest
             'budget' => ['nullable', 'numeric', 'min:0'],
             'deadline' => ['nullable', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:10000'],
+            'ai_model' => ['nullable', 'string', 'in:gemini,openai,anthropic'],
             'brief_file' => [
                 'required',
                 File::types(['pdf'])

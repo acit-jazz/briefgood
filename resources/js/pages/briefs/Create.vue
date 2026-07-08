@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { index, store } from '@/routes/briefs';
 import { dashboard } from '@/routes';
@@ -18,6 +19,12 @@ defineOptions({
         ],
     },
 });
+
+const aiModels = [
+    { value: 'gemini', label: 'Gemini (Free tier)' },
+    { value: 'openai', label: 'OpenAI GPT-4o Mini' },
+    { value: 'anthropic', label: 'Anthropic Claude' },
+];
 </script>
 
 <template>
@@ -86,6 +93,21 @@ defineOptions({
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
                         />
                         <InputError :message="errors.notes" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="ai_model">AI Model</Label>
+                        <Select name="ai_model" default-value="gemini">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select AI Model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="model in aiModels" :key="model.value" :value="model.value">
+                                    {{ model.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <InputError :message="errors.ai_model" />
                     </div>
 
                     <div class="grid gap-2">

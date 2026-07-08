@@ -18,6 +18,7 @@ class AnalyzeBriefJob implements ShouldQueue
     public function __construct(
         public Brief $brief,
         public bool $useAdvancedModel = false,
+        public ?string $aiProvider = null,
     ) {
         $this->tries = (int) config('briefgood.ai.max_retries', 2);
         $this->onQueue('ai-analysis');
@@ -25,6 +26,6 @@ class AnalyzeBriefJob implements ShouldQueue
 
     public function handle(AIAnalysisPipeline $pipeline): void
     {
-        $pipeline->run($this->brief, $this->useAdvancedModel);
+        $pipeline->run($this->brief, $this->useAdvancedModel, $this->aiProvider);
     }
 }

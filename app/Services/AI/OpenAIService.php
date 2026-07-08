@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Enums\Lab;
 use RuntimeException;
 
-class GeminiService implements AIProviderInterface
+class OpenAIService implements AIProviderInterface
 {
     public function __construct(
         protected PromptBuilderService $promptBuilder,
@@ -18,7 +18,7 @@ class GeminiService implements AIProviderInterface
 
     public function providerName(): string
     {
-        return 'gemini';
+        return 'openai';
     }
 
     public function analyzeBrief(BriefAnalysisInputDto $input, bool $useAdvancedModel = false): BriefAnalysisResultDto
@@ -30,7 +30,7 @@ class GeminiService implements AIProviderInterface
         try {
             $response = (new BriefAnalysisAgent)->prompt(
                 $prompt,
-                provider: Lab::Gemini,
+                provider: Lab::OpenAI,
                 model: $model,
                 timeout: (int) config('briefgood.ai.timeout', 180),
             );
@@ -41,7 +41,7 @@ class GeminiService implements AIProviderInterface
         } catch (\Throwable $exception) {
             Log::error('AI brief analysis failed', [
                 'brief_id' => $input->briefId,
-                'provider' => 'gemini',
+                'provider' => 'openai',
                 'model' => $model,
                 'message' => $exception->getMessage(),
             ]);
@@ -53,7 +53,7 @@ class GeminiService implements AIProviderInterface
     protected function getModel(bool $useAdvancedModel): string
     {
         return $useAdvancedModel
-            ? config('briefgood.ai.advanced_model', 'gemini-2.5-pro')
-            : config('briefgood.ai.default_model', 'gemini-2.0-flash');
+            ? config('briefgood.ai.openai.advanced_model', 'gpt-4o')
+            : config('briefgood.ai.openai.default_model', 'gpt-4o-mini');
     }
 }

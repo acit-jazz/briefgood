@@ -9,17 +9,20 @@ use App\DTOs\AI\BriefAnalysisResultDto;
 class AIOrchestratorService
 {
     public function __construct(
-        protected AIProviderInterface $provider,
+        protected AIServiceFactory $factory,
     ) {}
 
-    public function analyze(BriefAnalysisInputDto $input, bool $useAdvancedModel = false): BriefAnalysisResultDto
+    public function analyze(BriefAnalysisInputDto $input, bool $useAdvancedModel = false, ?string $provider = null): BriefAnalysisResultDto
     {
+        $provider = $provider ?? config('ai.provider', 'gemini');
+        $aiProvider = $this->factory->make($provider);
+
         $complexityThreshold = (int) config('briefgood.ai.complexity_threshold', 7);
 
-        $result = $this->provider->analyzeBrief($input, $useAdvancedModel);
+        $result = $aiProvider->analyzeBrief($input, $useAdvancedModel);
 
         if (! $useAdvancedModel && $result->pitchComplexityScore >= $complexityThreshold) {
-            return $this->provider->analyzeBrief($input, useAdvancedModel: true);
+            return $aiProvider->analyzeBrief($input, useAdvancedModel: true);
         }
 
         return $result;
