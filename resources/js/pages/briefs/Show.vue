@@ -257,13 +257,13 @@ defineOptions({
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent class="prose prose-sm dark:prose-invert max-w-none">
+                <CardContent class="prose prose-sm prose-invert max-w-none">
                     <HtmlEditor
                         v-if="editingField === 'executive_summary'"
                         v-model="editValue"
                         class="min-h-[100px]"
                     />
-                    <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.executive_summary"></div>
+                    <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.executive_summary"></div>
                 </CardContent>
             </Card>
 
@@ -300,7 +300,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.scope_of_work"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.scope_of_work"></div>
                         </CardContent>
                     </Card>
                     <!-- Deliverables -->
@@ -326,7 +326,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.deliverables"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.deliverables"></div>
                         </CardContent>
                     </Card>
                     <!-- Mandatory Requirements -->
@@ -352,7 +352,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.mandatory_requirements"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.mandatory_requirements"></div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -381,7 +381,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.target_audience"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.target_audience"></div>
                         </CardContent>
                     </Card>
                     <!-- Timeline -->
@@ -407,7 +407,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.timeline"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.timeline"></div>
                         </CardContent>
                     </Card>
                     <!-- Budget -->
@@ -433,7 +433,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.budget"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.budget"></div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -462,7 +462,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.brand_overview"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.brand_overview"></div>
                         </CardContent>
                     </Card>
                     <!-- Campaign Objective -->
@@ -488,7 +488,7 @@ defineOptions({
                                 v-model="editValue"
                                 class="min-h-[100px]"
                             />
-                            <div v-else class="prose prose-sm dark:prose-invert max-w-none" v-html="analysis.campaign_objective"></div>
+                            <div v-else class="prose prose-sm prose-invert max-w-none" v-html="analysis.campaign_objective"></div>
                         </CardContent>
                     </Card>
                 </TabsContent>

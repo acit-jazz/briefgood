@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
+import { BookOpen, UploadCloudIcon, LayoutGrid, BriefcaseBusiness, UserIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
@@ -36,6 +36,10 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
 import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
+import { index as briefsIndex, create as briefsCreate } from '@/routes/briefs';
+import { index as businessUnitsIndex } from '@/routes/business-units';
+import { index as pitchPipelineIndex } from '@/routes/pitch-pipeline';
+import { index as usersIndex } from '@/routes/users';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
@@ -51,13 +55,28 @@ const auth = computed(() => page.props.auth);
 const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 
 const activeItemStyles =
-    'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+    'text-white bg-[#1C7A56]';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Briefs',
+        href: briefsIndex(),
+        icon: BookOpen,
+    },
+    {
+        title: 'Business Units',
+        href: businessUnitsIndex(),
+        icon: BriefcaseBusiness,
+    },
+    {
+        title: 'Users',
+        href: usersIndex(),
+        icon: UserIcon,
     },
 ];
 
@@ -68,7 +87,7 @@ const rightNavItems: NavItem[] = [
 <template>
     <div>
         <div class="border-b border-sidebar-border/80">
-            <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
+            <div class="mx-auto flex h-20 items-center px-4 md:max-w-7xl">
                 <!-- Mobile Menu -->
                 <div class="lg:hidden">
                     <Sheet>
@@ -87,7 +106,7 @@ const rightNavItems: NavItem[] = [
                             >
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon
-                                    class="size-6 fill-current text-black dark:text-white"
+                                    class=" text-black"
                                 />
                             </SheetHeader>
                             <div
@@ -141,15 +160,15 @@ const rightNavItems: NavItem[] = [
                 </Link>
 
                 <!-- Desktop Menu -->
-                <div class="hidden h-full lg:flex lg:flex-1">
-                    <NavigationMenu class="ml-10 flex h-full items-stretch">
+                <div class="hidden lg:flex lg:flex-1 ">
+                    <NavigationMenu class="ml-10 flex  items-stretch mx-auto w-fit bg-[#ECEFF3] rounded-full ">
                         <NavigationMenuList
-                            class="flex h-full items-stretch space-x-2"
+                            class="flex items-stretch "
                         >
                             <NavigationMenuItem
                                 v-for="(item, index) in mainNavItems"
                                 :key="index"
-                                class="relative flex h-full items-center"
+                                class="relative flex  items-center"
                             >
                                 <Link
                                     :class="[
@@ -158,7 +177,7 @@ const rightNavItems: NavItem[] = [
                                             item.href,
                                             activeItemStyles,
                                         ),
-                                        'h-9 cursor-pointer px-3',
+                                        'cursor-pointer px-3',
                                     ]"
                                     :href="item.href"
                                 >
@@ -169,10 +188,6 @@ const rightNavItems: NavItem[] = [
                                     />
                                     {{ item.title }}
                                 </Link>
-                                <div
-                                    v-if="isCurrentUrl(item.href)"
-                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
-                                ></div>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
@@ -244,7 +259,7 @@ const rightNavItems: NavItem[] = [
                                         :alt="auth.user.name"
                                     />
                                     <AvatarFallback
-                                        class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
+                                        class="rounded-lg bg-neutral-200 font-semibold text-black"
                                     >
                                         {{ getInitials(auth.user?.name) }}
                                     </AvatarFallback>

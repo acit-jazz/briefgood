@@ -52,47 +52,76 @@ defineOptions({
         </div>
 
         <div class="grid gap-4">
-            <Card
-                v-for="brief in briefs.data"
-                :key="brief.id"
-                class="transition-colors hover:border-primary/40"
-            >
-                <CardHeader class="flex flex-row items-start justify-between pb-2">
-                    <div>
-                        <CardTitle class="text-base">
-                            <Link
-                                :href="show(brief.id)"
-                                class="hover:underline"
-                            >
-                                {{ brief.title }}
-                            </Link>
-                        </CardTitle>
-                        <p class="text-sm text-muted-foreground">
-                            {{ brief.client_name }}
-                        </p>
-                    </div>
-                    <div class="flex gap-2">
+
+            <table class="min-w-full divide-y divide-border">
+                <thead class="bg-muted/50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">PROJECT NAME</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">Client</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">Assignee</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">OWNER</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">deadline</th>
+                        <th class="px-4 py-3 text-right text-sm font-medium uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border bg-white">
+                    <tr
+                        v-for="brief in briefs.data"
+                        :key="brief.id"
+                        class="hover:bg-muted/50"
+                    >
+                        <td class="px-4 py-3 text-sm font-medium">{{ brief.title }}</td>
+                        <td class="px-4 py-3 text-sm text-muted-foreground">{{ brief.client_name }}</td>
+                        <td class="px-4 py-3 text-sm text-muted-foreground">
+
+                            <div v-if="brief.latest_analysis && brief.latest_analysis.recommended_business_units">
+                                <div
+                                    v-for="(unit, index) in brief.latest_analysis.recommended_business_units"
+                                    :key="index"
+                                    class="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground mr-1 mb-1"
+                                >
+                                    {{ unit.name }}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
                         <Badge variant="outline">{{ brief.status_label }}</Badge>
                         <Badge variant="secondary">{{ brief.ai_status }}</Badge>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div class="flex items-center justify-between">
-                        <p
-                            v-if="brief.deadline"
-                            class="text-xs text-muted-foreground"
-                        >
-                            Deadline: {{ brief.deadline }}
-                        </p>
-                        <Button size="sm" variant="outline" as-child>
-                            <Link :href="show(brief.id)">
-                                <Eye class="mr-1 size-3" />
-                                View Details
-                            </Link>
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-muted-foreground">
+                            {{ brief.creator?.name }}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-muted-foreground">
+                            {{ brief.deadline }}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <Button size="sm" variant="outline" as-child>
+                                    <Link :href="show(brief.id)">
+                                        <Eye class="mr-1 size-3" />
+                                        View Details
+                                    </Link>
+                                </Button>
+                                <button
+                                    @click="goToEdit(brief.id)"
+                                    class="rounded p-1 hover:bg-muted"
+                                    title="Edit"
+                                >
+                                    <Pencil class="size-4 text-muted-foreground" />
+                                </button>
+                                <button
+                                    @click="deletebrief(brief.id)"
+                                    class="rounded p-1 hover:bg-muted"
+                                    title="Delete"
+                                >
+                                    <Trash2 class="size-4 text-destructive" />
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
 
             <p
                 v-if="!briefs.data.length"

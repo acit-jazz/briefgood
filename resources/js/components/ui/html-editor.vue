@@ -144,7 +144,7 @@ watch(() => props.modelValue, (newVal) => {
         <div
             ref="editorRef"
             contenteditable="true"
-            class="prose prose-sm dark:prose-invert max-w-none p-3 min-h-[100px] focus:outline-none"
+            class="prose prose-sm prose-invert max-w-none p-3 min-h-[100px] focus:outline-none"
             :class="[!modelValue ? 'text-muted-foreground' : '']"
             :data-placeholder="placeholder || 'Start typing...'"
             @input="handleInput"

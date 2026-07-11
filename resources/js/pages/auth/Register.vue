@@ -91,7 +91,7 @@ defineOptions({
 
             <Button
                 type="submit"
-                class="mt-2 w-full"
+                class="mt-2 w-full rounded-full cursor-pointer bg-gray-200 text-black hover:bg-[#1C7A56] hover:text-white"
                 tabindex="5"
                 :disabled="processing"
                 data-test="register-user-button"

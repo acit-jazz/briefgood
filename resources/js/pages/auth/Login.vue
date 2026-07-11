@@ -92,7 +92,7 @@ defineProps<{
 
             <Button
                 type="submit"
-                class="mt-4 w-full"
+                class="mt-4 w-full rounded-full cursor-pointer bg-gray-200 text-black hover:bg-[#1C7A56] hover:text-white"
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
@@ -102,9 +102,5 @@ defineProps<{
             </Button>
         </div>
 
-        <div class="text-center text-sm text-muted-foreground">
-            Don't have an account?
-            <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
-        </div>
     </Form>
 </template>

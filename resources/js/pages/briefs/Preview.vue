@@ -87,7 +87,7 @@ async function exportPDF(): Promise<void> {
                     }
                 });
                 cloneDoc.querySelectorAll('[class*="dark:"]').forEach((el) => {
-                    el.classList.remove('dark:text-blue-300', 'dark:bg-blue-950/20', 'dark:prose-invert');
+                    el.classList.remove('text-blue-300', 'bg-blue-950/20', 'prose-invert');
                 });
             },
         });

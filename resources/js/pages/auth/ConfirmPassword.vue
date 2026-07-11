@@ -56,7 +56,7 @@ defineOptions({
 
             <div class="flex items-center">
                 <Button
-                    class="w-full"
+                    class="w-full rounded-full cursor-pointer bg-gray-200 text-black hover:bg-[#1C7A56] hover:text-white"
                     :disabled="processing"
                     data-test="confirm-password-button"
                 >
