@@ -34,6 +34,8 @@ class BusinessUnitRequest extends FormRequest
                 Rule::unique('business_units', 'slug')->ignore($unitId),
             ],
             'description' => ['nullable', 'string'],
+            'logo' => ['nullable', 'image', 'max:2048', 'mimes:jpg,jpeg,png,svg,webp'],
+            'remove_logo' => ['nullable', 'boolean'],
             'pic_user_id' => ['nullable', 'exists:users,id'],
             'is_active' => ['sometimes', 'boolean'],
             'services' => ['nullable', 'array'],

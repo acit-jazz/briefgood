@@ -19,6 +19,7 @@ class BusinessUnit extends Model
         'name',
         'slug',
         'description',
+        'logo_path',
         'pic_user_id',
         'metadata',
         'is_active',
@@ -30,6 +31,15 @@ class BusinessUnit extends Model
             'metadata' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (! $this->logo_path) {
+            return null;
+        }
+
+        return asset('storage/' . $this->logo_path);
     }
 
     public function category(): BelongsTo

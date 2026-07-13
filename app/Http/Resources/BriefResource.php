@@ -25,6 +25,7 @@ class BriefResource extends JsonResource
             'notes' => $this->notes,
             'status' => $this->status?->value,
             'status_label' => $this->status?->label(),
+            'pitch_assignments' => $this->pitchAssignments ?  PitchAssignmentsResource::collection($this->whenLoaded('pitchAssignments'))->resolve() : [],
             'ai_status' => $this->ai_status?->value,
             'ai_error' => $this->ai_error,
             'primary_file_name' => $this->primary_file_name,

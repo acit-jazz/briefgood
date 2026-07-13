@@ -170,7 +170,7 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply bg-[#fafafa] text-foreground;
     }
 }
 div[data-slot="card-content"] ul {

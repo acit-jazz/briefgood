@@ -49,6 +49,12 @@ class BusinessUnitController extends Controller
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
 
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('business-units/logos', 'public');
+            $data['logo_path'] = $logoPath;
+        }
+
         // Extract service attachments (service_id with specialization_score)
         $serviceAttachments = $data['services'] ?? [];
         unset($data['services']);
@@ -90,6 +96,22 @@ class BusinessUnitController extends Controller
     {
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($businessUnit->logo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($businessUnit->logo_path);
+            }
+            $logoPath = $request->file('logo')->store('business-units/logos', 'public');
+            $data['logo_path'] = $logoPath;
+        }
+
+        // Handle logo removal
+        if ($request->boolean('remove_logo') && $businessUnit->logo_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($businessUnit->logo_path);
+            $data['logo_path'] = null;
+        }
 
         // Extract service attachments
         $serviceAttachments = $data['services'] ?? [];

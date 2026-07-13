@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Briefcase, Target, TrendingUp, Zap } from 'lucide-vue-next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { create, index, show } from '@/routes/briefs';
+import { ArrowUpRight, Briefcase, FileText, Target, TrendingUp, Zap } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import { create } from '@/routes/briefs';
 import { dashboard } from '@/routes';
 
 type Stats = {
@@ -37,103 +37,99 @@ defineOptions({
 <template>
     <Head title="Dashboard" />
 
-    <div class="flex flex-col gap-6 p-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight">BriefGood</h1>
-                <p class="text-sm text-muted-foreground">
-                    AI-powered brief standardization & pitch management
-                </p>
-            </div>
-            <Link
-                :href="create()"
-                class="text-sm font-medium text-primary hover:underline"
-            >
-                + Upload Brief
-            </Link>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium">Active Briefs</CardTitle>
-                    <Briefcase class="size-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ stats.active_briefs }}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium">Win Rate</CardTitle>
-                    <TrendingUp class="size-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ stats.win_rate }}%</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium">Pending Pitches</CardTitle>
-                    <Target class="size-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ stats.pending_pitches }}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between pb-2">
-                    <CardTitle class="text-sm font-medium">Won / Lost</CardTitle>
-                    <Zap class="size-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ stats.won }} / {{ stats.lost }}</div>
-                </CardContent>
-            </Card>
-        </div>
-
-        <div class="grid gap-6 lg:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle class="text-base">Recent Briefs</CardTitle>
-                </CardHeader>
-                <CardContent class="space-y-3">
-                    <Link
-                        v-for="brief in recentBriefs"
-                        :key="brief.id"
-                        :href="show(brief.id)"
-                        class="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-muted/50"
-                    >
-                        <div>
-                            <p class="font-medium">{{ brief.title }}</p>
-                            <p class="text-xs text-muted-foreground">{{ brief.client_name }}</p>
-                        </div>
-                        <span class="text-xs capitalize text-muted-foreground">{{ brief.status }}</span>
-                    </Link>
-                    <Link
-                        :href="index()"
-                        class="block text-center text-sm text-primary hover:underline"
-                    >
-                        View all briefs
-                    </Link>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle class="text-base">Pipeline by Status</CardTitle>
-                </CardHeader>
-                <CardContent class="space-y-2">
-                    <div
-                        v-for="(count, status) in pipeline"
-                        :key="status"
-                        class="flex items-center justify-between text-sm"
-                    >
-                        <span class="capitalize">{{ status }}</span>
-                        <span class="font-medium">{{ count }}</span>
+    <div class="space-y-6 p-4">
+        <section class="relative overflow-hidden rounded-[3rem] bg-emerald-700 text-white shadow-2xl">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,theme(colors.white)/10,transparent_35%)]" />
+            <div class="relative grid gap-8 px-6 py-10 lg:grid-cols-[1.4fr_1fr] lg:px-12 lg:py-16">
+                <div class="space-y-6">
+                    <div class="max-w-xl">
+                        <p class="text-4xl font-semibold leading-tight lg:text-5xl">
+                            Every great collaboration starts with the right brief.
+                        </p>
                     </div>
-                </CardContent>
-            </Card>
+                    <div class="flex items-center gap-4">
+                        <Button as-child size="lg" class="rounded-full bg-white px-6 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-slate-100">
+                            <Link :href="create()" class="inline-flex items-center gap-3">
+                                Create Brief
+                                <ArrowUpRight class="size-4 text-emerald-900" />
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+
+                <div class="relative grid h-full place-items-center overflow-hidden rounded-[3rem] bg-white p-8 shadow-xl">
+                    <div class="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-700 text-white shadow-md">
+                        <ArrowUpRight class="size-5" />
+                    </div>
+                    <div class="flex h-full w-full flex-col items-center justify-center gap-4 rounded-[2.5rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
+                        <div class="rounded-3xl bg-slate-50 p-5 shadow-inner">
+                            <FileText class="size-8 text-slate-900" />
+                        </div>
+                        <div class="text-6xl font-bold tracking-tight text-slate-950 lg:text-7xl">95</div>
+                        <div class="text-lg font-medium text-slate-600">Brief Created</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="space-y-4">
+            <div class="flex items-center justify-between gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-semibold">Highlights</h2>
+                    <p class="text-sm text-muted-foreground">Overview of your current brief and pitch metrics.</p>
+                </div>
+                <div class="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm text-muted-foreground">
+                    <span>See all stats</span>
+                    <ArrowUpRight class="size-4" />
+                </div>
+            </div>
+
+            <div class="flex gap-4 overflow-x-auto pb-4">
+                <div class="min-w-[18rem] snap-center rounded-[2rem] border border-border bg-white p-6 shadow-xl">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.24em] text-muted-foreground">Active Briefs</p>
+                            <p class="mt-4 text-4xl font-semibold">{{ stats.active_briefs }}</p>
+                        </div>
+                        <div class="rounded-3xl bg-emerald-700 p-3 text-white">
+                            <Briefcase class="size-5" />
+                        </div>
+                    </div>
+                </div>
+                <div class="min-w-[18rem] snap-center rounded-[2rem] border border-border bg-white p-6 shadow-xl">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.24em] text-muted-foreground">Win Rate</p>
+                            <p class="mt-4 text-4xl font-semibold">{{ stats.win_rate }}%</p>
+                        </div>
+                        <div class="rounded-3xl bg-slate-900 p-3 text-white">
+                            <TrendingUp class="size-5" />
+                        </div>
+                    </div>
+                </div>
+                <div class="min-w-[18rem] snap-center rounded-[2rem] border border-border bg-white p-6 shadow-xl">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.24em] text-muted-foreground">Pending Pitches</p>
+                            <p class="mt-4 text-4xl font-semibold">{{ stats.pending_pitches }}</p>
+                        </div>
+                        <div class="rounded-3xl bg-slate-900 p-3 text-white">
+                            <Target class="size-5" />
+                        </div>
+                    </div>
+                </div>
+                <div class="min-w-[18rem] snap-center rounded-[2rem] border border-border bg-white p-6 shadow-xl">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.24em] text-muted-foreground">Won / Lost</p>
+                            <p class="mt-4 text-4xl font-semibold">{{ stats.won }} / {{ stats.lost }}</p>
+                        </div>
+                        <div class="rounded-3xl bg-slate-900 p-3 text-white">
+                            <Zap class="size-5" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Eye, Plus } from 'lucide-vue-next';
-import { Badge } from '@/components/ui/badge';
+import { Eye, Plus, Search } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { create, index, show } from '@/routes/briefs';
+import  AnimationButton  from '@/components/ui/button/AnimationButton.vue';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
+import { create, index, show } from '@/routes/briefs';
 
 type BriefItem = {
     id: string;
@@ -15,6 +16,11 @@ type BriefItem = {
     status_label: string;
     ai_status: string;
     deadline?: string | null;
+    creator?: { name: string };
+    pitch_assignments?: Array<{ name: string }>;
+    latest_analysis?: {
+        recommended_business_units?: Array<{ name: string }>;
+    };
 };
 
 defineProps<{
@@ -35,100 +41,121 @@ defineOptions({
 <template>
     <Head title="Briefs" />
 
-    <div class="flex flex-col gap-6 p-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Briefs</h1>
-                <p class="text-sm text-muted-foreground">
-                    Client RFPs and standardized pitch opportunities.
-                </p>
+    <div class="space-y-6 p-4 pb-26">
+          <div class="w-fit mx-auto lg:mx-0 flex items-center fixed bottom-5 right-5">
+              <AnimationButton
+              data-aos="fade-up" data-aos-anchor-placement="top-bottom" data-aos-delay="900"
+                :href="create().url" class="mt-10" color="#1C7A56" 
+              >
+                <span class="text-white">Create Brief</span>
+              </AnimationButton>
+              <AnimationButton
+              data-aos="fade-up" data-aos-anchor-placement="top-bottom" data-aos-delay="900"
+                :href="create().url" class="mt-10" color="#E7BA33" 
+                :isSquare="true"
+              >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M5 15L15 5"
+                      stroke="#000"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                    <path
+                      d="M6.875 5H15V13.125"
+                      stroke="#000"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+              </AnimationButton>
+          </div>
+
+        <div class="grid gap-4 ">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex items-center gap-3 w-6/12 rounded-2xl border border-border bg-background px-3 py-2 shadow-sm">
+                    <Search class="size-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search briefs by title, client, or assignee"
+                        class="border-0 bg-transparent px-0 py-0 text-sm shadow-none"
+                    />
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <span class="rounded-full bg-muted px-3 py-2">All</span>
+                    <span class="rounded-full bg-muted px-3 py-2">Draft</span>
+                    <span class="rounded-full bg-muted px-3 py-2">Sent</span>
+                    <span class="rounded-full bg-muted px-3 py-2">Archive</span>
+                </div>
             </div>
-            <Button as-child>
-                <Link :href="create()">
-                    <Plus class="mr-2 size-4" />
-                    Upload Brief
-                </Link>
-            </Button>
         </div>
 
-        <div class="grid gap-4">
-
-            <table class="min-w-full divide-y divide-border">
-                <thead class="bg-muted/50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">PROJECT NAME</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">Client</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">Assignee</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">Status</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">OWNER</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium uppercase">deadline</th>
-                        <th class="px-4 py-3 text-right text-sm font-medium uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border bg-white">
-                    <tr
-                        v-for="brief in briefs.data"
-                        :key="brief.id"
-                        class="hover:bg-muted/50"
-                    >
-                        <td class="px-4 py-3 text-sm font-medium">{{ brief.title }}</td>
-                        <td class="px-4 py-3 text-sm text-muted-foreground">{{ brief.client_name }}</td>
-                        <td class="px-4 py-3 text-sm text-muted-foreground">
-
-                            <div v-if="brief.latest_analysis && brief.latest_analysis.recommended_business_units">
-                                <div
-                                    v-for="(unit, index) in brief.latest_analysis.recommended_business_units"
-                                    :key="index"
-                                    class="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground mr-1 mb-1"
-                                >
-                                    {{ unit.name }}
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                        <Badge variant="outline">{{ brief.status_label }}</Badge>
-                        <Badge variant="secondary">{{ brief.ai_status }}</Badge>
-                        </td>
-                        <td class="px-4 py-3 text-sm text-muted-foreground">
-                            {{ brief.creator?.name }}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-muted-foreground">
-                            {{ brief.deadline }}
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <Button size="sm" variant="outline" as-child>
-                                    <Link :href="show(brief.id)">
-                                        <Eye class="mr-1 size-3" />
-                                        View Details
-                                    </Link>
-                                </Button>
-                                <button
-                                    @click="goToEdit(brief.id)"
-                                    class="rounded p-1 hover:bg-muted"
-                                    title="Edit"
-                                >
-                                    <Pencil class="size-4 text-muted-foreground" />
-                                </button>
-                                <button
-                                    @click="deletebrief(brief.id)"
-                                    class="rounded p-1 hover:bg-muted"
-                                    title="Delete"
-                                >
-                                    <Trash2 class="size-4 text-destructive" />
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <p
-                v-if="!briefs.data.length"
-                class="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground"
-            >
-                No briefs yet. Upload your first client RFP to start AI analysis.
-            </p>
-        </div>
+        <Card class="overflow-hidden rounded-3xl border border-border shadow-sm">
+            <CardContent class="p-0">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-border">
+                        <thead class="bg-muted/70 text-left text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                            <tr>
+                                <th class="px-5 py-4">Project Name</th>
+                                <th class="px-5 py-4">Client</th>
+                                <th class="px-5 py-4">Assignee</th>
+                                <th class="px-5 py-4">Owner</th>
+                                <th class="px-5 py-4">Deadline</th>
+                                <th class="px-5 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border bg-background">
+                            <tr
+                                v-for="brief in briefs.data"
+                                :key="brief.id"
+                                class="transition-colors duration-150 hover:bg-muted/50"
+                            >
+                                <td class="px-5 py-4">
+                                    <div class="font-medium text-foreground">{{ brief.title }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-sm text-muted-foreground">
+                                    {{ brief.client_name }}
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center">
+                                        <template v-if="brief.pitch_assignments && brief.pitch_assignments.length">
+                                            <div
+                                                v-for="(unit, index) in brief.pitch_assignments"
+                                                :key="unit.id || index"
+                                                class="relative"
+                                                :style="{ marginLeft: index > 0 ? '-12px' : '0', zIndex: brief.pitch_assignments.length - index }"
+                                            >
+                                                <img
+                                                    :src="unit.business_unit.logo_url"
+                                                    alt="Logo"
+                                                    class="h-10 w-10 rounded-full object-cover border-2 border-background"
+                                                    :title="unit.business_unit.name"
+                                                />
+                                            </div>
+                                        </template>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-sm text-muted-foreground">
+                                    {{ brief.creator?.name }}
+                                </td>
+                                <td class="px-5 py-4 text-sm text-muted-foreground">
+                                    {{ brief.deadline }}
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <Button as-child size="sm" variant="outline">
+                                        <Link :href="show(brief.id)" class="inline-flex items-center gap-2">
+                                            <Eye class="size-4" />
+                                            View Details
+                                        </Link>
+                                    </Button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-if="!briefs.data.length" class="rounded-b-3xl border-t border-border bg-background p-8 text-center text-sm text-muted-foreground">
+                    No briefs yet. Upload your first client RFP to start AI analysis.
+                </div>
+            </CardContent>
+        </Card>
     </div>
 </template>

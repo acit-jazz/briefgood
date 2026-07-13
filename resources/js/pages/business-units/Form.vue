@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
-import { Trash2 } from 'lucide-vue-next';
+import { Head, setLayoutProps, router } from '@inertiajs/vue3';
+import { Trash2, Upload, X } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,8 @@ const props = defineProps<{
         id?: string;
         name?: string;
         description?: string;
+        logo_path?: string;
+        logo_url?: string;
         category_id?: string;
         pic?: { id: string; name: string };
         services?: Array<{
@@ -38,19 +40,24 @@ const props = defineProps<{
     categories: Category[];
     users: User[];
     services: AvailableService[];
+    errors?: Record<string, string>;
 }>();
 
 const isEdit = computed(() => !!props.businessUnit?.id);
 
 // Form state
-console.log('Initial business unit prop:', props.businessUnit);
-const formData = ref({
+const form = ref({
     name: props.businessUnit?.name ?? '',
     description: props.businessUnit?.description ?? '',
     category_id: props.businessUnit?.category_id ?? '',
     pic_user_id: props.businessUnit?.pic?.id ?? '',
     is_active: props.businessUnit?.is_active ?? true,
 });
+
+const logoFile = ref<File | null>(null);
+const removeLogo = ref(false);
+const logoPreview = ref<string | null>(props.businessUnit?.logo_url ?? null);
+const processing = ref(false);
 
 // Attached services with specialization scores
 const attachedServices = ref<AttachedService[]>([]);
@@ -66,13 +73,14 @@ watch(
     () => props.businessUnit,
     (unit) => {
         if (unit) {
-            formData.value = {
+            form.value = {
                 name: unit.name ?? '',
                 description: unit.description ?? '',
                 category_id: unit.category_id ?? '',
                 pic_user_id: unit.pic?.id ?? '',
                 is_active: unit.is_active ?? true,
             };
+            logoPreview.value = unit.logo_url ?? null;
 
             if (unit.services?.length) {
                 attachedServices.value = unit.services.map(s => ({
@@ -86,12 +94,31 @@ watch(
     { immediate: true }
 );
 
+function handleLogoChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+        logoFile.value = file;
+        removeLogo.value = false;
+        // Create preview URL
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            logoPreview.value = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeLogoHandler() {
+    logoFile.value = null;
+    removeLogo.value = true;
+    logoPreview.value = null;
+}
+
 function addService() {
-    // Don't add if no available services
     if (availableServices.value.length === 0) {
         return;
     }
-
     const firstAvailable = availableServices.value[0];
     attachedServices.value.push({
         service_id: firstAvailable.id,
@@ -118,7 +145,6 @@ function getScoreColor(score: number): string {
     return 'text-red-600';
 }
 
-
 setLayoutProps({
     breadcrumbs: [
         { title: 'Dashboard', href: dashboard() },
@@ -131,7 +157,43 @@ setLayoutProps({
 });
 
 function handleSubmit() {
-    // Services are submitted via form - no need to manually handle
+    processing.value = true;
+
+    // Build FormData for proper file upload
+    const formData = new FormData();
+    formData.append('name', form.value.name);
+    formData.append('description', form.value.description);
+    formData.append('category_id', form.value.category_id);
+    formData.append('pic_user_id', form.value.pic_user_id);
+    formData.append('is_active', form.value.is_active ? '1' : '0');
+    formData.append('_method', isEdit.value ? 'put' : 'post');
+
+    if (logoFile.value) {
+        formData.append('logo', logoFile.value);
+    }
+
+    if (removeLogo.value) {
+        formData.append('remove_logo', '1');
+    }
+
+    // Append services
+    attachedServices.value.forEach((service, index) => {
+        formData.append(`services[${index}][service_id]`, service.service_id);
+        formData.append(`services[${index}][specialization_score]`, service.specialization_score.toString());
+        if (service.notes) {
+            formData.append(`services[${index}][notes]`, service.notes);
+        }
+    });
+
+    const url = isEdit.value
+        ? update(props.businessUnit!.id!).url
+        : store().url;
+
+    router.post(url, formData, {
+        onFinish: () => {
+            processing.value = false;
+        },
+    });
 }
 </script>
 
@@ -144,22 +206,16 @@ function handleSubmit() {
                 <CardTitle>{{ isEdit ? 'Edit' : 'Create' }} Business Unit</CardTitle>
             </CardHeader>
             <CardContent>
-                <Form
-                    :action="isEdit ? update(businessUnit!.id!).url : store().url"
-                    :method="isEdit ? 'put' : 'post'"
-                    v-slot="{ errors, processing }"
-                    class="grid gap-4"
-                    @submit="handleSubmit"
-                >
+                <form @submit.prevent="handleSubmit" class="grid gap-4">
                     <div class="grid gap-2">
                         <Label for="name">Name</Label>
                         <Input
                             id="name"
                             name="name"
-                            v-model="formData.name"
+                            v-model="form.name"
                             required
                         />
-                        <InputError :message="errors.name" />
+                        <InputError :message="props.errors?.name" />
                     </div>
 
                     <div class="grid gap-2">
@@ -167,7 +223,7 @@ function handleSubmit() {
                         <select
                             id="category_id"
                             name="category_id"
-                            v-model="formData.category_id"
+                            v-model="form.category_id"
                             class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                         >
                             <option value="">Select category</option>
@@ -179,7 +235,7 @@ function handleSubmit() {
                                 {{ cat.name }}
                             </option>
                         </select>
-                        <InputError :message="errors.category_id" />
+                        <InputError :message="props.errors?.category_id" />
                     </div>
 
                     <div class="grid gap-2">
@@ -187,7 +243,7 @@ function handleSubmit() {
                         <select
                             id="pic_user_id"
                             name="pic_user_id"
-                            v-model="formData.pic_user_id"
+                            v-model="form.pic_user_id"
                             class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                         >
                             <option value="">Select PIC</option>
@@ -199,7 +255,7 @@ function handleSubmit() {
                                 {{ user.name }} ({{ user.role }})
                             </option>
                         </select>
-                        <InputError :message="errors.pic_user_id" />
+                        <InputError :message="props.errors?.pic_user_id" />
                     </div>
 
                     <div class="grid gap-2">
@@ -207,11 +263,87 @@ function handleSubmit() {
                         <textarea
                             id="description"
                             name="description"
-                            v-model="formData.description"
+                            v-model="form.description"
                             rows="4"
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                         />
-                        <InputError :message="errors.description" />
+                        <InputError :message="props.errors?.description" />
+                    </div>
+
+                    <!-- Logo Upload -->
+                    <div class="grid gap-2">
+                        <Label>Logo</Label>
+
+                        <!-- Current Logo Preview -->
+                        <div v-if="logoPreview && !removeLogo" class="relative inline-block">
+                            <img
+                                :src="logoPreview"
+                                alt="Current logo"
+                                class="h-24 w-24 rounded-lg border object-contain"
+                            />
+                            <button
+                                type="button"
+                                @click="removeLogoHandler"
+                                class="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground hover:bg-destructive/80"
+                            >
+                                <X class="size-3" />
+                            </button>
+                        </div>
+
+                        <!-- Upload New Logo -->
+                        <div v-if="!logoPreview || removeLogo">
+                            <label
+                                for="logo"
+                                class="flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-transparent hover:border-muted-foreground/50"
+                            >
+                                <Upload class="mb-2 size-8 text-muted-foreground" />
+                                <span class="text-sm text-muted-foreground">
+                                    Click to upload logo
+                                </span>
+                                <span class="text-xs text-muted-foreground">
+                                    JPG, PNG, SVG, or WebP (max 2MB)
+                                </span>
+                            </label>
+                            <input
+                                id="logo"
+                                name="logo"
+                                type="file"
+                                accept="image/jpeg,image/png,image/svg+xml,image/webp"
+                                class="hidden"
+                                @change="handleLogoChange"
+                            />
+                        </div>
+
+                        <!-- Replace logo when current exists -->
+                        <div v-if="logoPreview && !removeLogo" class="mt-2">
+                            <label
+                                for="logo_replace"
+                                class="flex h-20 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-transparent hover:border-muted-foreground/50"
+                            >
+                                <Upload class="mb-1 size-5 text-muted-foreground" />
+                                <span class="text-xs text-muted-foreground">
+                                    Click to replace logo
+                                </span>
+                            </label>
+                            <input
+                                id="logo_replace"
+                                name="logo"
+                                type="file"
+                                accept="image/jpeg,image/png,image/svg+xml,image/webp"
+                                class="hidden"
+                                @change="handleLogoChange"
+                            />
+                        </div>
+
+                        <!-- Hidden input to submit logo removal -->
+                        <input
+                            v-if="removeLogo"
+                            type="hidden"
+                            name="remove_logo"
+                            value="1"
+                        />
+
+                        <InputError :message="props.errors?.logo" />
                     </div>
 
                     <!-- Services Management with Specialization Scores -->
@@ -239,13 +371,6 @@ function handleSubmit() {
                                     </Button>
                                 </div>
 
-                                <!-- Hidden input to submit service_id -->
-                                <input
-                                    type="hidden"
-                                    :name="`services[${index}][service_id]`"
-                                    :value="service.service_id"
-                                />
-
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="space-y-1">
                                         <Label class="text-xs">Specialization Score</Label>
@@ -264,17 +389,11 @@ function handleSubmit() {
                                                 {{ service.specialization_score }}
                                             </span>
                                         </div>
-                                        <input
-                                            type="hidden"
-                                            :name="`services[${index}][specialization_score]`"
-                                            :value="service.specialization_score"
-                                        />
                                     </div>
 
                                     <div class="space-y-1">
                                         <Label class="text-xs">Notes (optional)</Label>
                                         <Input
-                                            :name="`services[${index}][notes]`"
                                             v-model="service.notes"
                                             placeholder="e.g. 5+ years experience"
                                             class="h-7 text-xs"
@@ -284,21 +403,15 @@ function handleSubmit() {
                             </div>
                         </div>
 
-                        <div class="flex gap-2 items-center" v-if="availableServices.length > 0">
-                            <select
-                                @change="(e) => { const val = (e.target as HTMLSelectElement).value; if(val) { attachedServices.push({ service_id: val, specialization_score: 50, notes: '' }); (e.target as HTMLSelectElement).value = ''; } }"
-                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                            >
-                                <option value="">Select a service to add...</option>
-                                <option
-                                    v-for="service in availableServices"
-                                    :key="service.id"
-                                    :value="service.id"
-                                >
-                                    {{ service.name }}
-                                </option>
-                            </select>
-                        </div>
+                        <Button
+                            v-if="availableServices.length > 0"
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="addService"
+                        >
+                            Add Service
+                        </Button>
 
                         <p v-else-if="services.length === 0" class="text-xs text-muted-foreground">
                             No services available. Please create services first.
@@ -307,7 +420,7 @@ function handleSubmit() {
                             All services have been added.
                         </p>
 
-                        <InputError :message="errors.services" />
+                        <InputError :message="props.errors?.services" />
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -315,7 +428,7 @@ function handleSubmit() {
                             type="checkbox"
                             id="is_active"
                             name="is_active"
-                            v-model="formData.is_active"
+                            v-model="form.is_active"
                             value="1"
                             class="size-4 rounded border-input"
                         />
@@ -328,7 +441,7 @@ function handleSubmit() {
                     >
                         {{ isEdit ? 'Update' : 'Create' }}
                     </Button>
-                </Form>
+                </form>
             </CardContent>
         </Card>
     </div>
