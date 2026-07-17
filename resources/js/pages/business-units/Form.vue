@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Head, setLayoutProps, router } from '@inertiajs/vue3';
-import { Trash2, Upload, X } from 'lucide-vue-next';
+import { Trash2, Upload, X, Plus } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
@@ -16,6 +17,7 @@ type AvailableService = { id: string; name: string; keywords?: string[] };
 type AttachedService = {
     id?: string;
     service_id: string;
+    service_name?: string; // For newly created services
     specialization_score: number;
     notes: string;
 };
@@ -61,6 +63,12 @@ const processing = ref(false);
 
 // Attached services with specialization scores
 const attachedServices = ref<AttachedService[]>([]);
+
+// Service dialog state
+const showServiceDialog = ref(false);
+const selectedServiceId = ref('');
+const newServiceName = ref('');
+const isCreatingNewService = ref(false);
 
 // Get available services that are not yet attached
 const availableServices = computed(() => {
@@ -115,23 +123,76 @@ function removeLogoHandler() {
     logoPreview.value = null;
 }
 
-function addService() {
-    if (availableServices.value.length === 0) {
-        return;
+function openServiceDialog() {
+    selectedServiceId.value = '';
+    newServiceName.value = '';
+    isCreatingNewService.value = false;
+    showServiceDialog.value = true;
+}
+
+function closeServiceDialog() {
+    showServiceDialog.value = false;
+    selectedServiceId.value = '';
+    newServiceName.value = '';
+    isCreatingNewService.value = false;
+}
+
+async function confirmAddService() {
+    if (isCreatingNewService.value && newServiceName.value.trim()) {
+        // Create new service via API first
+        try {
+            const response = await fetch('/services', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    name: newServiceName.value.trim(),
+                    is_active: true,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.id) {
+                throw new Error(data.message || 'Failed to create service');
+            }
+
+            attachedServices.value.push({
+                service_id: data.id,
+                service_name: data.name || newServiceName.value.trim(),
+                specialization_score: 50,
+                notes: '',
+            });
+            closeServiceDialog();
+        } catch (error) {
+            console.error(error);
+        }
+    } else if (selectedServiceId.value) {
+        attachedServices.value.push({
+            service_id: selectedServiceId.value,
+            specialization_score: 50,
+            notes: '',
+        });
+        closeServiceDialog();
     }
-    const firstAvailable = availableServices.value[0];
-    attachedServices.value.push({
-        service_id: firstAvailable.id,
-        specialization_score: 50,
-        notes: '',
-    });
+}
+
+function slugify(text: string): string {
+    return text.toLowerCase().replace(/\s+/g, '-');
 }
 
 function removeService(index: number) {
     attachedServices.value.splice(index, 1);
 }
 
-function getServiceName(serviceId: string): string {
+function getServiceName(serviceId: string, attachedService?: AttachedService): string {
+    if (attachedService?.service_name) {
+        return attachedService.service_name;
+    }
+
     return props.services.find(s => s.id === serviceId)?.name ?? 'Unknown';
 }
 
@@ -360,7 +421,7 @@ function handleSubmit() {
                                 class="rounded-lg border p-3 space-y-2"
                             >
                                 <div class="flex items-center justify-between">
-                                    <span class="font-medium text-sm">{{ getServiceName(service.service_id) }}</span>
+                                    <span class="font-medium text-sm">{{ getServiceName(service.service_id, service) }}</span>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -408,8 +469,9 @@ function handleSubmit() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            @click="addService"
+                            @click="openServiceDialog"
                         >
+                            <Plus class="mr-1 size-4" />
                             Add Service
                         </Button>
 
@@ -445,4 +507,70 @@ function handleSubmit() {
             </CardContent>
         </Card>
     </div>
+
+    <!-- Service Selection Dialog -->
+    <Dialog v-model:open="showServiceDialog">
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <DialogTitle>Add Service</DialogTitle>
+                <DialogDescription>Select an existing service or create a new one.</DialogDescription>
+            </DialogHeader>
+
+            <div class="space-y-4 py-4">
+                <div class="flex gap-2">
+                    <button
+                        type="button"
+                        class="flex-1 rounded-lg border p-3 text-center text-sm transition-colors"
+                        :class="!isCreatingNewService ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted'"
+                        @click="isCreatingNewService = false"
+                    >
+                        Select Existing
+                    </button>
+                    <button
+                        type="button"
+                        class="flex-1 rounded-lg border p-3 text-center text-sm transition-colors"
+                        :class="isCreatingNewService ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted'"
+                        @click="isCreatingNewService = true"
+                    >
+                        Create New
+                    </button>
+                </div>
+
+                <div v-if="!isCreatingNewService">
+                    <label class="text-sm font-medium mb-2 block">Select Service</label>
+                    <select
+                        v-model="selectedServiceId"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                        <option value="">Choose a service...</option>
+                        <option
+                            v-for="service in availableServices"
+                            :key="service.id"
+                            :value="service.id"
+                        >
+                            {{ service.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <div v-else>
+                    <label class="text-sm font-medium mb-2 block">Service Name</label>
+                    <Input
+                        v-model="newServiceName"
+                        placeholder="Enter service name"
+                    />
+                </div>
+            </div>
+
+            <DialogFooter class="gap-2">
+                <Button variant="outline" @click="closeServiceDialog">Cancel</Button>
+                <Button
+                    :disabled="(!isCreatingNewService && !selectedServiceId) || (isCreatingNewService && !newServiceName.trim())"
+                    @click="confirmAddService"
+                >
+                    Add Service
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

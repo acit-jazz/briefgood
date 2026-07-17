@@ -4,6 +4,7 @@ use App\Http\Controllers\BriefController;
 use App\Http\Controllers\BusinessUnitController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PitchPipelineController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('briefs/{brief}/analysis', [BriefController::class, 'updateAnalysis'])->name('briefs.analysis.update');
     Route::post('briefs/{brief}/analyze', [BriefController::class, 'analyze'])->name('briefs.analyze');
     Route::get('briefs/{brief}/preview', [BriefController::class, 'preview'])->name('briefs.preview');
+
+    Route::post('services', [ServiceController::class, 'store'])->name('services.store');
+
+    Route::post('pitch-assignments/{pitchAssignment}/accept', [PitchPipelineController::class, 'accept'])->name('pitch-assignments.accept');
+    Route::post('pitch-assignments/{pitchAssignment}/decline', [PitchPipelineController::class, 'decline'])->name('pitch-assignments.decline');
 
     Route::resource('business-units', BusinessUnitController::class)->except(['show']);
 

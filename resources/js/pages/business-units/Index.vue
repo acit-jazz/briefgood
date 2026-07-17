@@ -1,21 +1,33 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { Pencil, Plus } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Pencil } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { create, edit, index } from '@/routes/business-units';
-import  AnimationButton  from '@/components/ui/button/AnimationButton.vue';
+import AnimationButton from '@/components/ui/button/AnimationButton.vue';
 import { dashboard } from '@/routes';
 
 type BusinessUnit = {
     id: string;
     name: string;
     description?: string;
+    logo_url?: string;
     is_active: boolean;
     category?: { name: string };
     services?: Array<{ name: string }>;
+    pic?: { name: string; email?: string };
 };
+
+const page = usePage();
+const auth = computed(() => page.props.auth);
+
+// Role check helpers
+const canManageBusinessUnits = computed(() => {
+    const role = auth.value?.user?.role;
+    return role === 'super_admin' || role === 'group_admin';
+});
 
 defineProps<{
     businessUnits: { data: BusinessUnit[] };
@@ -43,16 +55,16 @@ defineOptions({
                 </p>
             </div>
 
-          <div class="w-fit mx-auto lg:mx-0 flex items-center">
+          <div v-if="canManageBusinessUnits" class="w-fit mx-auto lg:mx-0 flex items-center">
               <AnimationButton
               data-aos="fade-up" data-aos-anchor-placement="top-bottom" data-aos-delay="900"
-                :href="create().url" size="40" color="#1C7A56" 
+                :href="create().url" size="40" color="#1C7A56"
               >
                 <span class="text-white">Create Unit</span>
               </AnimationButton>
               <AnimationButton
               data-aos="fade-up" data-aos-anchor-placement="top-bottom" data-aos-delay="900"
-                :href="create().url" size="40" color="#E7BA33" 
+                :href="create().url" size="40" color="#E7BA33"
                 :isSquare="true"
               >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -94,6 +106,7 @@ defineOptions({
                         </p>
                     </div>
                     <Button
+                        v-if="canManageBusinessUnits"
                         variant="ghost"
                         size="icon"
                         class="border-12 size-18 rounded-full absolute -right-4 -top-4 border-[#fafafa]"

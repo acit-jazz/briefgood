@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, router, setLayoutProps } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Head, router, setLayoutProps, usePage } from '@inertiajs/vue3';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import usersRoute from '@/routes/users';
 import { dashboard } from '@/routes';
@@ -14,7 +15,15 @@ type UserItem = {
     created_at: string;
 };
 
-defineProps<{
+const page = usePage();
+const auth = computed(() => page.props.auth);
+
+// Role check helpers
+const isSuperAdmin = computed(() => auth.value?.user?.role === 'super_admin');
+const isGroupAdmin = computed(() => auth.value?.user?.role === 'group_admin');
+const canManageUsers = computed(() => isSuperAdmin.value || isGroupAdmin.value);
+
+const props = defineProps<{
     users: { data: UserItem[] };
 }>();
 
@@ -92,6 +101,7 @@ function goToEdit(id: string) {
                         <td class="px-4 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <button
+                                    v-if="canManageUsers"
                                     @click="goToEdit(user.id)"
                                     class="rounded p-1 hover:bg-muted"
                                     title="Edit"
@@ -99,6 +109,7 @@ function goToEdit(id: string) {
                                     <Pencil class="size-4 text-muted-foreground" />
                                 </button>
                                 <button
+                                    v-if="isSuperAdmin"
                                     @click="deleteUser(user.id)"
                                     class="rounded p-1 hover:bg-muted"
                                     title="Delete"

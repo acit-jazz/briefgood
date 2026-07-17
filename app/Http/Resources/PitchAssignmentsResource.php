@@ -16,6 +16,7 @@ class PitchAssignmentsResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'business_unit_id' => $this->business_unit_id,
             'confidence' => $this->confidence,
             'status' => $this->status,
             'rejection_reason' => $this->rejection_reason,

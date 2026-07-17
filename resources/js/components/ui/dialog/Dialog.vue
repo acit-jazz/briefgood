@@ -13,6 +13,7 @@ const forwarded = useForwardPropsEmits(props, emits)
     v-slot="slotProps"
     data-slot="dialog"
     v-bind="forwarded"
+    ckass
   >
     <slot v-bind="slotProps" />
   </DialogRoot>

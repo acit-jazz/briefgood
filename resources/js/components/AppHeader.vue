@@ -57,28 +57,44 @@ const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 const activeItemStyles =
     'text-white bg-[#1C7A56]';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Briefs',
-        href: briefsIndex(),
-        icon: BookOpen,
-    },
-    {
-        title: 'Business Units',
-        href: businessUnitsIndex(),
-        icon: BriefcaseBusiness,
-    },
-    {
-        title: 'Users',
-        href: usersIndex(),
-        icon: UserIcon,
-    },
-];
+// Role check helpers
+const isSuperAdmin = computed(() => auth.value?.user?.role === 'super_admin');
+const isGroupAdmin = computed(() => auth.value?.user?.role === 'group_admin');
+const isBusinessUnitPic = computed(() => auth.value?.user?.role === 'business_unit_pic');
+const isAdmin = computed(() => isSuperAdmin.value || isGroupAdmin.value);
+const canManageUsers = computed(() => isSuperAdmin.value || isGroupAdmin.value);
+const canCreateBrief = computed(() => isSuperAdmin.value || isGroupAdmin.value);
+
+const mainNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Briefs',
+            href: briefsIndex(),
+            icon: BookOpen,
+        },
+        {
+            title: 'Business Units',
+            href: businessUnitsIndex(),
+            icon: BriefcaseBusiness,
+        },
+    ];
+
+    // Users menu only visible to Super Admin and Group Admin
+    if (canManageUsers.value) {
+        items.push({
+            title: 'Users',
+            href: usersIndex(),
+            icon: UserIcon,
+        });
+    }
+
+    return items;
+});
 
 const rightNavItems: NavItem[] = [
 ];
@@ -195,16 +211,6 @@ const rightNavItems: NavItem[] = [
 
                 <div class="ml-auto flex items-center space-x-2">
                     <div class="relative flex items-center space-x-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            class="group h-9 w-9 cursor-pointer"
-                        >
-                            <Search
-                                class="size-5 opacity-80 group-hover:opacity-100"
-                            />
-                        </Button>
-
                         <div class="hidden space-x-1 lg:flex">
                             <template
                                 v-for="item in rightNavItems"
@@ -248,10 +254,10 @@ const rightNavItems: NavItem[] = [
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                class="relative size-10 w-auto rounded-full p-1 focus-within:ring-2 focus-within:ring-primary"
+                                class="relative size-12 w-auto rounded-full p-1 focus-within:ring-2 focus-within:ring-primary"
                             >
                                 <Avatar
-                                    class="size-8 overflow-hidden rounded-full"
+                                    class="size-10 overflow-hidden rounded-full"
                                 >
                                     <AvatarImage
                                         v-if="auth.user.avatar"

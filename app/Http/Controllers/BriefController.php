@@ -108,6 +108,7 @@ class BriefController extends Controller
 
                 return [
                     'id' => $assignment->id,
+                    'business_unit_id' => $assignment->business_unit_id,
                     'status' => $assignment->status?->value,
                     'confidence' => $assignment->confidence,
                     'business_unit' => $assignment->businessUnit?->name,

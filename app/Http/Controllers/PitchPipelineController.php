@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PitchAssignmentStatus;
 use App\Http\Resources\BriefResource;
 use App\Models\PitchAssignment;
 use Illuminate\Http\Request;
@@ -29,5 +30,28 @@ class PitchPipelineController extends Controller
                 ]),
             ])->values(),
         ]);
+    }
+
+    public function accept(PitchAssignment $pitchAssignment): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorize('acceptAssignment', $pitchAssignment);
+
+        $pitchAssignment->update([
+            'status' => PitchAssignmentStatus::Accepted,
+        ]);
+
+        return back()->with('success', 'Assignment accepted.');
+    }
+
+    public function decline(Request $request, PitchAssignment $pitchAssignment): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorize('declineAssignment', $pitchAssignment);
+
+        $pitchAssignment->update([
+            'status' => PitchAssignmentStatus::Rejected,
+            'rejection_reason' => $request->input('reason'),
+        ]);
+
+        return back()->with('success', 'Assignment declined.');
     }
 }

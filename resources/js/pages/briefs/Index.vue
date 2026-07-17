@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { Eye, Plus, Search } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import { Eye, Search } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import  AnimationButton  from '@/components/ui/button/AnimationButton.vue';
+import AnimationButton from '@/components/ui/button/AnimationButton.vue';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
@@ -17,16 +18,52 @@ type BriefItem = {
     ai_status: string;
     deadline?: string | null;
     creator?: { name: string };
-    pitch_assignments?: Array<{ name: string }>;
+    pitch_assignments?: Array<{ id: string; business_unit_id: string; business_unit: { id: string; name: string; logo_url: string } }>;
     latest_analysis?: {
         recommended_business_units?: Array<{ name: string }>;
     };
 };
 
-defineProps<{
-    briefs: { data: BriefItem[] };
+const page = usePage();
+const auth = computed(() => page.props.auth);
+const props = defineProps<{
+    briefs: { data: BriefItem[]; current_page: number; last_page: number };
     filters: Record<string, string>;
 }>();
+
+// Search and filter state
+const search = ref(props.filters.search || '');
+const activeStatus = ref(props.filters.status || '');
+
+// Role check helpers
+const canCreateBrief = computed(() => {
+    const role = auth.value?.user?.role;
+    return role === 'super_admin' || role === 'group_admin';
+});
+
+// Watch for URL changes and update local state
+watch(() => props.filters, (newFilters) => {
+    search.value = newFilters.search || '';
+    activeStatus.value = newFilters.status || '';
+}, { immediate: true });
+
+// Debounced search
+let searchTimeout: ReturnType<typeof setTimeout>;
+watch(search, (newSearch) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        router.get(index().url, { search: newSearch, status: activeStatus.value }, { preserveState: true, replace: true });
+    }, 300);
+});
+
+function setStatusFilter(status: string) {
+    activeStatus.value = status;
+    router.get(index().url, { search: search.value, status: status || '' }, { preserveState: true, replace: true });
+}
+
+function goToPage(pageNum: number) {
+    router.get(index().url + '?page=' + pageNum, { search: search.value, status: activeStatus.value }, { preserveState: true });
+}
 
 defineOptions({
     layout: {
@@ -42,16 +79,16 @@ defineOptions({
     <Head title="Briefs" />
 
     <div class="space-y-6 p-4 pb-26">
-          <div class="w-fit mx-auto lg:mx-0 flex items-center fixed bottom-5 right-5">
+          <div v-if="canCreateBrief" class="w-fit mx-auto lg:mx-0 flex items-center fixed bottom-5 right-5">
               <AnimationButton
               data-aos="fade-up" data-aos-anchor-placement="top-bottom" data-aos-delay="900"
-                :href="create().url" class="mt-10" color="#1C7A56" 
+                :href="create().url" class="mt-10" color="#1C7A56"
               >
                 <span class="text-white">Create Brief</span>
               </AnimationButton>
               <AnimationButton
               data-aos="fade-up" data-aos-anchor-placement="top-bottom" data-aos-delay="900"
-                :href="create().url" class="mt-10" color="#E7BA33" 
+                :href="create().url" class="mt-10" color="#E7BA33"
                 :isSquare="true"
               >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -76,15 +113,47 @@ defineOptions({
                 <div class="flex items-center gap-3 w-6/12 rounded-2xl border border-border bg-background px-3 py-2 shadow-sm">
                     <Search class="size-4 text-muted-foreground" />
                     <Input
+                        v-model="search"
                         placeholder="Search briefs by title, client, or assignee"
                         class="border-0 bg-transparent px-0 py-0 text-sm shadow-none"
                     />
                 </div>
-                <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span class="rounded-full bg-muted px-3 py-2">All</span>
-                    <span class="rounded-full bg-muted px-3 py-2">Draft</span>
-                    <span class="rounded-full bg-muted px-3 py-2">Sent</span>
-                    <span class="rounded-full bg-muted px-3 py-2">Archive</span>
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                    <button
+                        @click="setStatusFilter('')"
+                        class="rounded-full px-3 py-2 transition-colors"
+                        :class="activeStatus === '' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
+                    >
+                        All
+                    </button>
+                    <button
+                        @click="setStatusFilter('new')"
+                        class="rounded-full px-3 py-2 transition-colors"
+                        :class="activeStatus === 'new' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
+                    >
+                        New
+                    </button>
+                    <button
+                        @click="setStatusFilter('reviewing')"
+                        class="rounded-full px-3 py-2 transition-colors"
+                        :class="activeStatus === 'reviewing' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
+                    >
+                        Reviewing
+                    </button>
+                    <button
+                        @click="setStatusFilter('assigned')"
+                        class="rounded-full px-3 py-2 transition-colors"
+                        :class="activeStatus === 'assigned' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
+                    >
+                        Assigned
+                    </button>
+                    <button
+                        @click="setStatusFilter('completed')"
+                        class="rounded-full px-3 py-2 transition-colors"
+                        :class="activeStatus === 'completed' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
+                    >
+                        Completed
+                    </button>
                 </div>
             </div>
         </div>
@@ -153,7 +222,7 @@ defineOptions({
                     </table>
                 </div>
                 <div v-if="!briefs.data.length" class="rounded-b-3xl border-t border-border bg-background p-8 text-center text-sm text-muted-foreground">
-                    No briefs yet. Upload your first client RFP to start AI analysis.
+                    No briefs found.
                 </div>
             </CardContent>
         </Card>

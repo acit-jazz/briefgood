@@ -10,7 +10,7 @@ class BriefRepository
     public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         return Brief::query()
-            ->with(['creator', 'latestAnalysis'])
+            ->with(['creator', 'latestAnalysis', 'pitchAssignments.businessUnit'])
             ->filter($filters)
             ->latest()
             ->paginate($perPage)

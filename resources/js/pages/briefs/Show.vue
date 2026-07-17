@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check } from 'lucide-vue-next';
+import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
+import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check, Clock, CircleDot } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
@@ -44,17 +45,20 @@ type Brief = {
     ai_error?: string | null;
 };
 
+type PitchAssignment = {
+    id: string;
+    business_unit_id: string;
+    status: string;
+    confidence: number;
+    business_unit?: string;
+    matched_services?: string[];
+    recommendation_confidence?: number;
+};
+
 const props = defineProps<{
     brief: Brief;
     analysis: Analysis | null;
-    pitchAssignments: Array<{
-        id: string;
-        status: string;
-        confidence: number;
-        business_unit?: string;
-        matched_services?: string[];
-        recommendation_confidence?: number;
-    }>;
+    pitchAssignments: PitchAssignment[];
     resourceAllocations?: Array<{
         id: string;
         resource_name?: string;
@@ -63,6 +67,128 @@ const props = defineProps<{
         estimated_duration_days?: number;
     }>;
 }>();
+
+const page = usePage();
+const auth = computed(() => page.props.auth);
+
+// Role check helpers
+const isSuperAdmin = computed(() => auth.value?.user?.role === 'super_admin');
+const isGroupAdmin = computed(() => auth.value?.user?.role === 'group_admin');
+const isBusinessUnitPic = computed(() => auth.value?.user?.role === 'business_unit_pic');
+const canEdit = computed(() => isSuperAdmin.value || isGroupAdmin.value);
+
+// Check if current BU PIC is assigned to this brief
+const myAssignment = computed(() => {
+    if (!isBusinessUnitPic.value) {
+        return null;
+    }
+    return props.pitchAssignments.find(
+        (p: PitchAssignment) => p.business_unit_id === auth.value?.user?.business_unit_id
+    );
+});
+
+const canAcceptDecline = computed(() => {
+    return myAssignment.value?.status === 'pending';
+});
+
+// Dialog states
+const showAcceptDialog = ref(false);
+const showDeclineDialog = ref(false);
+const selectedAssignmentId = ref<string | null>(null);
+const declineReason = ref('');
+
+const declineReasonOptions = [
+    'Team full',
+    'Resource unavailable',
+    'Schedule conflict',
+    'Skills mismatch',
+    'Other priorities',
+    'Budget concerns',
+];
+
+// Status styling
+const statusStyles: Record<string, { border: string; bg: string; text: string; icon: any }> = {
+    pending: {
+        border: '#FEE685',
+        bg: '#FFFBEB',
+        text: '#BB4D00',
+        icon: Clock,
+    },
+    accepted: {
+        border: '#71DD88',
+        bg: '#EDFBF0',
+        text: '#16752A',
+        icon: Check,
+    },
+    rejected: {
+        border: '#FADEAD',
+        bg: '#FFFBF0',
+        text: '#BB4D00',
+        icon: X,
+    },
+    in_progress: {
+        border: '#FEE685',
+        bg: '#FFFBEB',
+        text: '#BB4D00',
+        icon: CircleDot,
+    },
+    submitted: {
+        border: '#71DD88',
+        bg: '#EDFBF0',
+        text: '#16752A',
+        icon: Check,
+    },
+};
+
+function getStatusStyle(status: string) {
+    const style = statusStyles[status?.toLowerCase()] || statusStyles.pending;
+    return {
+        borderColor: style.border,
+        backgroundColor: style.bg,
+        color: style.text,
+    };
+}
+
+function getStatusIcon(status: string) {
+    const Icon = statusStyles[status?.toLowerCase()]?.icon || Clock;
+    return Icon;
+}
+
+function openAcceptDialog(assignmentId: string) {
+    selectedAssignmentId.value = assignmentId;
+    showAcceptDialog.value = true;
+}
+
+function openDeclineDialog(assignmentId: string) {
+    selectedAssignmentId.value = assignmentId;
+    declineReason.value = '';
+    showDeclineDialog.value = true;
+}
+
+function closeAcceptDialog() {
+    showAcceptDialog.value = false;
+    selectedAssignmentId.value = null;
+}
+
+function closeDeclineDialog() {
+    showDeclineDialog.value = false;
+    selectedAssignmentId.value = null;
+    declineReason.value = '';
+}
+
+function confirmAccept() {
+    if (selectedAssignmentId.value) {
+        acceptAssignment(selectedAssignmentId.value);
+        closeAcceptDialog();
+    }
+}
+
+function confirmDecline() {
+    if (selectedAssignmentId.value) {
+        declineAssignment(selectedAssignmentId.value, declineReason.value);
+        closeDeclineDialog();
+    }
+}
 
 const form = useForm({
     advanced: false,
@@ -144,6 +270,18 @@ function saveEdit(): void {
                 preserveScroll: true,
             });
         },
+    });
+}
+
+function acceptAssignment(assignmentId: string) {
+    router.post(`/pitch-assignments/${assignmentId}/accept`, {}, {
+        preserveScroll: true,
+    });
+}
+
+function declineAssignment(assignmentId: string, reason: string = '') {
+    router.post(`/pitch-assignments/${assignmentId}/decline`, { reason }, {
+        preserveScroll: true,
     });
 }
 
@@ -241,14 +379,14 @@ defineOptions({
                 <CardHeader class="flex flex-row items-center justify-between">
                     <CardTitle>Executive Summary</CardTitle>
                     <Button
-                        v-if="editingField !== 'executive_summary'"
+                        v-if="canEdit && editingField !== 'executive_summary'"
                         size="sm"
                         variant="ghost"
                         @click="startEditing('executive_summary', analysis.executive_summary || '')"
                     >
                         <Pencil class="size-4" />
                     </Button>
-                    <div v-else class="flex gap-1">
+                    <div v-else-if="canEdit" class="flex gap-1">
                         <Button size="sm" variant="ghost" @click="cancelEditing">
                             <X class="size-4" />
                         </Button>
@@ -282,14 +420,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Scope of Work</CardTitle>
                             <Button
-                                v-if="editingField !== 'scope_of_work'"
+                                v-if="canEdit && editingField !== 'scope_of_work'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('scope_of_work', analysis.scope_of_work || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -308,14 +446,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Deliverables</CardTitle>
                             <Button
-                                v-if="editingField !== 'deliverables'"
+                                v-if="canEdit && editingField !== 'deliverables'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('deliverables', analysis.deliverables || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -334,14 +472,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Mandatory Requirements</CardTitle>
                             <Button
-                                v-if="editingField !== 'mandatory_requirements'"
+                                v-if="canEdit && editingField !== 'mandatory_requirements'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('mandatory_requirements', analysis.mandatory_requirements || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -363,14 +501,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Target Audience</CardTitle>
                             <Button
-                                v-if="editingField !== 'target_audience'"
+                                v-if="canEdit && editingField !== 'target_audience'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('target_audience', analysis.target_audience || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -389,14 +527,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Timeline</CardTitle>
                             <Button
-                                v-if="editingField !== 'timeline'"
+                                v-if="canEdit && editingField !== 'timeline'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('timeline', analysis.timeline || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -415,14 +553,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Budget</CardTitle>
                             <Button
-                                v-if="editingField !== 'budget'"
+                                v-if="canEdit && editingField !== 'budget'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('budget', analysis.budget || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -444,14 +582,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Brand Overview</CardTitle>
                             <Button
-                                v-if="editingField !== 'brand_overview'"
+                                v-if="canEdit && editingField !== 'brand_overview'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('brand_overview', analysis.brand_overview || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -470,14 +608,14 @@ defineOptions({
                         <CardHeader class="flex flex-row items-center justify-between">
                             <CardTitle class="text-sm">Campaign Objective</CardTitle>
                             <Button
-                                v-if="editingField !== 'campaign_objective'"
+                                v-if="canEdit && editingField !== 'campaign_objective'"
                                 size="sm"
                                 variant="ghost"
                                 @click="startEditing('campaign_objective', analysis.campaign_objective || '')"
                             >
                                 <Pencil class="size-4" />
                             </Button>
-                            <div v-else class="flex gap-1">
+                            <div v-else-if="canEdit" class="flex gap-1">
                                 <Button size="sm" variant="ghost" @click="cancelEditing"><X class="size-4" /></Button>
                                 <Button size="sm" variant="ghost" @click="saveEdit" :disabled="editForm.processing"><Check class="size-4" /></Button>
                             </div>
@@ -585,7 +723,7 @@ defineOptions({
         </div>
 
         <div class="space-y-4">
-            <Card>
+            <Card v-if="canEdit">
                 <CardHeader class="flex flex-row items-center justify-between">
                     <CardTitle class="text-sm">AI Insights</CardTitle>
                     <Button
@@ -633,7 +771,13 @@ defineOptions({
                                     ({{ pitch.confidence }}% AI confidence)
                                 </span>
                             </div>
-                            <Badge variant="outline">{{ pitch.status }}</Badge>
+                            <div
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize"
+                                :style="getStatusStyle(pitch.status)"
+                            >
+                                <component :is="getStatusIcon(pitch.status)" class="size-3.5" />
+                                {{ pitch.status }}
+                            </div>
                         </div>
                         <div v-if="pitch.matched_services?.length" class="space-y-1">
                             <span class="text-xs font-medium text-muted-foreground">Services to provide:</span>
@@ -648,9 +792,71 @@ defineOptions({
                                 </Badge>
                             </div>
                         </div>
+                        <!-- Accept/Decline buttons for BU PIC -->
+                        <div v-if="canAcceptDecline && pitch.business_unit_id === auth?.user?.business_unit_id" class="flex gap-2 mt-3 pt-3 border-t">
+                            <Button
+                                size="sm"
+                                class="flex-1"
+                                @click="openAcceptDialog(pitch.id)"
+                            >
+                                <Check class="mr-1 size-4" />
+                                Accept
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                class="flex-1"
+                                @click="openDeclineDialog(pitch.id)"
+                            >
+                                <X class="mr-1 size-4" />
+                                Decline
+                            </Button>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
         </div>
     </div>
+
+    <!-- Accept Dialog -->
+    <Dialog v-model:open="showAcceptDialog">
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <img src="/images/icon-plane.svg" class="w-32 block mx-auto">
+                <DialogTitle class="text-2xl font-normal text-center">Accept assignment?</DialogTitle>
+                <DialogDescription class="text-center">Your team will be notified.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="gap-2 justify-center">
+                <Button variant="outline" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto" @click="closeAcceptDialog">Back</Button>
+                <Button @click="confirmAccept" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto bg-[#1C7A56] text-white">Send</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <!-- Decline Dialog -->
+    <Dialog v-model:open="showDeclineDialog">
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <img src="/images/icon-plane.svg" class="w-32 block mx-auto">
+                <DialogTitle class="text-2xl font-normal text-center">Decline assignment?</DialogTitle>
+                <DialogDescription class="text-center">Your team will be notified.</DialogDescription>
+            </DialogHeader>
+            <div class="py-4">
+                <label class="text-sm font-medium mb-2 block">Reason</label>
+                <select
+                    v-model="declineReason"
+                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                    <option value="">Select a reason...</option>
+                    <option v-for="reason in declineReasonOptions" :key="reason" :value="reason">
+                        {{ reason }}
+                    </option>
+                </select>
+            </div>
+            <DialogFooter class="gap-2 justify-center">
+                <Button variant="outline" @click="closeDeclineDialog" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto">Back</Button>
+                <Button @click="confirmDecline" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto bg-[#1C7A56] text-white">Send</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>
