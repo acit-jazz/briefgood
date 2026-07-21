@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Super Administrator',
                 'email' => 'superadmin@briefgood.test',
-                'password' => 'password',
+                'password' => 'Brief9i8u7y6t!!',
                 'role' => UserRole::SuperAdmin,
                 'business_unit_id' => null,
             ],
@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Group Administrator',
                 'email' => 'groupadmin@briefgood.test',
-                'password' => 'password',
+                'password' => 'Brief9i8u7y6t!!',
                 'role' => UserRole::GroupAdmin,
                 'business_unit_id' => null,
             ],
@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
             $users[] = [
                 'name' => $bu->name . ' PIC',
                 'email' => 'pic-' . strtolower(str_replace(' ', '', $bu->name)) . '@briefgood.test',
-                'password' => 'password',
+                'password' => 'Brief9i8u7y6t!!',
                 'role' => UserRole::BusinessUnitPic,
                 'business_unit_id' => $bu->id,
             ];
@@ -49,7 +49,7 @@ class UserSeeder extends Seeder
         $users[] = [
             'name' => 'Viewer User',
             'email' => 'viewer@briefgood.test',
-            'password' => 'password',
+            'password' => 'Brief9i8u7y6t!!',
             'role' => UserRole::Viewer,
             'business_unit_id' => null,
         ];
