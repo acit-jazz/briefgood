@@ -39,7 +39,7 @@ return new class extends Migration
 
         Schema::create('services', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('business_unit_id')->constrained('business_units')->cascadeOnDelete();
+            $table->foreignUuid('business_unit_id')->nullable()->constrained('business_units')->cascadeOnDelete();
             $table->string('name');
             $table->string('slug');
             $table->text('description')->nullable();
@@ -48,7 +48,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['business_unit_id', 'slug']);
             $table->index(['business_unit_id', 'is_active']);
         });
 
