@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('primary_file_path')->nullable();
             $table->string('primary_file_mime')->nullable();
             $table->unsignedBigInteger('primary_file_size')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

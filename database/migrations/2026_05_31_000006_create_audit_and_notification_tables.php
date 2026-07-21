@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('causer_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('event');
             $table->text('description')->nullable();
-            $table->jsonb('properties')->nullable();
+            $table->json('properties')->nullable();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamps();
@@ -30,8 +30,8 @@ return new class extends Migration
             $table->string('action')->index();
             $table->string('auditable_type')->nullable();
             $table->uuid('auditable_id')->nullable();
-            $table->jsonb('old_values')->nullable();
-            $table->jsonb('new_values')->nullable();
+            $table->json('old_values')->nullable();
+            $table->json('new_values')->nullable();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamps();
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->string('subject');
             $table->string('template')->nullable();
             $table->string('status')->default('queued')->index();
-            $table->jsonb('payload')->nullable();
+            $table->json('payload')->nullable();
             $table->text('error')->nullable();
             $table->timestamp('sent_at')->nullable();
             $table->timestamps();

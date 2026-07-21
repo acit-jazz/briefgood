@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->foreignId('pic_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug');
             $table->text('description')->nullable();
-            $table->jsonb('keywords')->nullable();
+            $table->json('keywords')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
@@ -64,7 +64,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('type')->index();
             $table->text('content');
-            $table->jsonb('variables')->nullable();
+            $table->json('variables')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
@@ -73,7 +73,7 @@ return new class extends Migration
         Schema::create('ai_settings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('key')->unique();
-            $table->jsonb('value');
+            $table->json('value');
             $table->boolean('is_encrypted')->default(false);
             $table->timestamps();
         });

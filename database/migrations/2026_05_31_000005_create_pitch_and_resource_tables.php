@@ -32,7 +32,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('action');
             $table->text('notes')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
 
@@ -54,7 +54,7 @@ return new class extends Migration
             $table->decimal('estimated_hours', 8, 2)->nullable();
             $table->unsignedSmallInteger('estimated_workload_percent')->nullable();
             $table->unsignedSmallInteger('estimated_duration_days')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
 
             $table->unique(['brief_id', 'resource_id']);
