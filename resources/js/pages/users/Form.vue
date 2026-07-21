@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as usersIndex, update as usersUpdate } from '@/routes/users';
 import { dashboard } from '@/routes';
+import { index as usersIndex, update as usersUpdate } from '@/routes/users';
 
 type Role = {
     value: string;
@@ -46,6 +46,7 @@ setLayoutProps({
 
 function getRoleLabel(roleValue: string): string {
     const role = props.roles.find(r => r.value === roleValue);
+
     return role?.label || roleValue;
 }
 </script>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiUsageDashboardController;
 use App\Http\Controllers\BriefController;
 use App\Http\Controllers\BusinessUnitController;
 use App\Http\Controllers\DashboardController;
@@ -28,6 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', UserController::class);
 
     Route::get('pitch-pipeline', [PitchPipelineController::class, 'index'])->name('pitch-pipeline.index');
+
+    Route::get('ai-usage', [AiUsageDashboardController::class, 'index'])->name('ai-usage');
 });
 
 require __DIR__.'/settings.php';

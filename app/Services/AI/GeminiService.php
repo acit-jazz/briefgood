@@ -37,7 +37,12 @@ class GeminiService implements AIProviderInterface
 
             $data = is_array($response) ? $response : $response->toArray();
 
-            return BriefAnalysisResultDto::fromArray($data, $model);
+            $usage = is_array($response) ? null : $response->usage;
+            $promptTokens = $usage?->promptTokens ?? 0;
+            $completionTokens = $usage?->completionTokens ?? 0;
+            $costUsd = TokenCostService::calculate($model, $promptTokens, $completionTokens);
+
+            return BriefAnalysisResultDto::fromArrayWithUsage($data, $model, $promptTokens, $completionTokens, $costUsd);
         } catch (\Throwable $exception) {
             Log::error('AI brief analysis failed', [
                 'brief_id' => $input->briefId,

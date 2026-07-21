@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { Eye, Search } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import AnimationButton from '@/components/ui/button/AnimationButton.vue';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +38,7 @@ const activeStatus = ref(props.filters.status || '');
 // Role check helpers
 const canCreateBrief = computed(() => {
     const role = auth.value?.user?.role;
+
     return role === 'super_admin' || role === 'group_admin';
 });
 

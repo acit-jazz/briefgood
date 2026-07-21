@@ -32,6 +32,10 @@ class AiAnalysisResult extends Model
         'model_used',
         'raw_response',
         'extracted_data',
+        'prompt_tokens',
+        'completion_tokens',
+        'total_tokens',
+        'cost_usd',
     ];
 
     protected function casts(): array
@@ -43,6 +47,10 @@ class AiAnalysisResult extends Model
             'raw_response' => 'array',
             'extracted_data' => 'array',
             'ai_confidence_score' => 'decimal:2',
+            'prompt_tokens' => 'integer',
+            'completion_tokens' => 'integer',
+            'total_tokens' => 'integer',
+            'cost_usd' => 'decimal:6',
         ];
     }
 

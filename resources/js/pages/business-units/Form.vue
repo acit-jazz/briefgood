@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
 import { Head, setLayoutProps, router } from '@inertiajs/vue3';
 import { Trash2, Upload, X, Plus } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,6 +73,7 @@ const isCreatingNewService = ref(false);
 // Get available services that are not yet attached
 const availableServices = computed(() => {
     const attachedIds = attachedServices.value.map(s => s.service_id);
+
     return props.services.filter(s => !attachedIds.includes(s.id));
 });
 
@@ -105,6 +106,7 @@ watch(
 function handleLogoChange(event: Event) {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
+
     if (file) {
         logoFile.value = file;
         removeLogo.value = false;
@@ -200,9 +202,11 @@ function getScoreColor(score: number): string {
     if (score >= 80) {
         return 'text-green-600';
     }
+
     if (score >= 60) {
         return 'text-yellow-600';
     }
+
     return 'text-red-600';
 }
 
@@ -241,6 +245,7 @@ function handleSubmit() {
     attachedServices.value.forEach((service, index) => {
         formData.append(`services[${index}][service_id]`, service.service_id);
         formData.append(`services[${index}][specialization_score]`, service.specialization_score.toString());
+
         if (service.notes) {
             formData.append(`services[${index}][notes]`, service.notes);
         }

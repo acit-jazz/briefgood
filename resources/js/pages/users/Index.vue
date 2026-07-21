@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, router, setLayoutProps, usePage } from '@inertiajs/vue3';
 import { Pencil, Trash2 } from 'lucide-vue-next';
-import usersRoute from '@/routes/users';
+import { computed } from 'vue';
 import { dashboard } from '@/routes';
+import usersRoute from '@/routes/users';
 
 type UserItem = {
     id: string;

@@ -160,6 +160,10 @@ class AIAnalysisPipeline
             'ai_reasoning' => $result->aiReasoning,
             'model_used' => $result->modelUsed,
             'raw_response' => $result->rawResponse,
+            'prompt_tokens' => $result->promptTokens,
+            'completion_tokens' => $result->completionTokens,
+            'total_tokens' => $result->totalTokens,
+            'cost_usd' => $result->costUsd,
         ]);
     }
 

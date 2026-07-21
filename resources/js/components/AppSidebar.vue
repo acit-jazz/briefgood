@@ -14,11 +14,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { dashboard } from '@/routes';
 import { index as briefsIndex, create as briefsCreate } from '@/routes/briefs';
 import { index as businessUnitsIndex } from '@/routes/business-units';
 import { index as pitchPipelineIndex } from '@/routes/pitch-pipeline';
 import { index as usersIndex } from '@/routes/users';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [

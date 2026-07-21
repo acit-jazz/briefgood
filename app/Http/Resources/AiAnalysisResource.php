@@ -32,6 +32,10 @@ class AiAnalysisResource extends JsonResource
             'ai_confidence_score' => $this->ai_confidence_score,
             'ai_reasoning' => $this->ai_reasoning,
             'model_used' => $this->model_used,
+            'prompt_tokens' => $this->prompt_tokens,
+            'completion_tokens' => $this->completion_tokens,
+            'total_tokens' => $this->total_tokens,
+            'cost_usd' => $this->cost_usd,
             'recommendations' => AiRecommendationResource::collection($this->whenLoaded('recommendations')),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

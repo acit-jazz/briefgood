@@ -30,7 +30,11 @@ interface GrainientProps {
 
 const hexToRgb = (hex: string): [number, number, number] => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return [1, 1, 1];
+
+  if (!result) {
+return [1, 1, 1];
+}
+
   return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
 };
 
@@ -155,7 +159,9 @@ const containerRef = useTemplateRef<HTMLDivElement>('containerRef');
 
 let cleanup: (() => void) | null = null;
 const setup = () => {
-  if (!containerRef.value) return;
+  if (!containerRef.value) {
+return;
+}
 
   const renderer = new Renderer({
     webgl: 2,
@@ -232,6 +238,7 @@ const setup = () => {
   cleanup = () => {
     cancelAnimationFrame(raf);
     ro.disconnect();
+
     try {
       container.removeChild(canvas);
     } catch {

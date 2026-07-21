@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowUpRight, Briefcase, FileText, Target, TrendingUp, Zap } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import { index as briefsIndex, create as briefsCreate } from '@/routes/briefs';
@@ -41,6 +41,7 @@ const auth = computed(() => page.props.auth);
 // Role check helpers
 const canCreateBrief = computed(() => {
     const role = auth.value?.user?.role;
+
     return role === 'super_admin' || role === 'group_admin';
 });
 

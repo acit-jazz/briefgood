@@ -33,4 +33,6 @@ return [
         'disk' => env('BRIEFGOOD_UPLOAD_DISK', 'local'),
     ],
 
+    'use_queue' => (bool) env('USE_QUEUE', true),
+
 ];

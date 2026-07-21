@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { index, store } from '@/routes/briefs';
 import { dashboard } from '@/routes';
+import { index, store } from '@/routes/briefs';
 
 defineOptions({
     layout: {

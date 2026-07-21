@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Pencil } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { create, edit, index } from '@/routes/business-units';
 import AnimationButton from '@/components/ui/button/AnimationButton.vue';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboard } from '@/routes';
+import { create, edit, index } from '@/routes/business-units';
 
 type BusinessUnit = {
     id: string;
@@ -26,6 +26,7 @@ const auth = computed(() => page.props.auth);
 // Role check helpers
 const canManageBusinessUnits = computed(() => {
     const role = auth.value?.user?.role;
+
     return role === 'super_admin' || role === 'group_admin';
 });
 

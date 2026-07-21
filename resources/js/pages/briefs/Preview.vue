@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { ArrowLeft, Download } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 type Analysis = {
     executive_summary?: string;
@@ -60,7 +60,9 @@ const contentRef = ref<HTMLElement | null>(null);
 const isExporting = ref(false);
 
 async function exportPDF(): Promise<void> {
-    if (!contentRef.value) return;
+    if (!contentRef.value) {
+return;
+}
 
     isExporting.value = true;
 
@@ -75,6 +77,7 @@ async function exportPDF(): Promise<void> {
                     const computedStyle = window.getComputedStyle(htmlEl);
                     ['color', 'background-color', 'border-color', 'fill', 'stroke'].forEach((prop) => {
                         const val = computedStyle.getPropertyValue(prop);
+
                         if (val && val.includes('oklch')) {
                             htmlEl.style.setProperty(prop, '#000000');
                         }

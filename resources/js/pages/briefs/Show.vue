@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
-import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check, Clock, CircleDot } from 'lucide-vue-next';
+import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check, Clock, CircleDot, TriangleAlert } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import HtmlEditor from '@/components/ui/html-editor.vue';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
-import HtmlEditor from '@/components/ui/html-editor.vue';
 import { dashboard } from '@/routes';
 import { analyze, index } from '@/routes/briefs';
 import analysisRoutes from '@/routes/briefs/analysis';
+
 
 type Analysis = {
     id: string;
@@ -28,6 +29,11 @@ type Analysis = {
     pitch_complexity_score?: number;
     ai_confidence_score?: number;
     ai_reasoning?: string;
+    model_used?: string;
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    cost_usd?: number;
     recommended_business_units?: Array<{
         name: string;
         confidence: number;
@@ -82,6 +88,7 @@ const myAssignment = computed(() => {
     if (!isBusinessUnitPic.value) {
         return null;
     }
+
     return props.pitchAssignments.find(
         (p: PitchAssignment) => p.business_unit_id === auth.value?.user?.business_unit_id
     );
@@ -142,6 +149,7 @@ const statusStyles: Record<string, { border: string; bg: string; text: string; i
 
 function getStatusStyle(status: string) {
     const style = statusStyles[status?.toLowerCase()] || statusStyles.pending;
+
     return {
         borderColor: style.border,
         backgroundColor: style.bg,
@@ -151,6 +159,7 @@ function getStatusStyle(status: string) {
 
 function getStatusIcon(status: string) {
     const Icon = statusStyles[status?.toLowerCase()]?.icon || Clock;
+
     return Icon;
 }
 
@@ -254,7 +263,9 @@ function cancelEditing(): void {
 }
 
 function saveEdit(): void {
-    if (!editingField.value || !props.analysis) return;
+    if (!editingField.value || !props.analysis) {
+return;
+}
 
     editForm.field = editingField.value;
     editForm.value = editValue.value;
@@ -695,27 +706,31 @@ defineOptions({
                 </TabsContent>
             </Tabs>
 
-            <Card v-if="!analysis || isProcessing">
-                <CardHeader>
-                    <CardTitle class="flex items-center gap-2">
-                        <Spinner class="size-4" />
-                        AI Analysis in Progress
-                    </CardTitle>
-                </CardHeader>
-                <CardContent class="space-y-6">
-                    <div class="space-y-2">
-                        <p class="text-sm font-medium">{{ processingMessage }}</p>
-                        <Progress :value="progressValue" class="w-full" />
-                    </div>
+            <div  v-if="brief.ai_status != 'failed'">
+                <Card v-if="!analysis || isProcessing">
+                    <CardHeader>
+                        <CardTitle class="flex items-center gap-2">
+                            <Spinner class="size-4" />
+                            AI Analysis in Progress
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent class="space-y-6">
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium">{{ processingMessage }}</p>
+                            <Progress :value="progressValue" class="w-full" />
+                        </div>
 
-                    <p class="text-xs text-muted-foreground text-center">
-                        This usually takes 30-60 seconds. You can wait here or come back later.
-                    </p>
-                </CardContent>
-            </Card>
+                        <p class="text-xs text-muted-foreground text-center">
+                            This usually takes 30-60 seconds. You can wait here or come back later.
+                        </p>
+                    </CardContent>
+                </Card>
+
+            </div>
 
             <Card v-if="!analysis && brief.ai_status === 'failed'">
                 <CardContent class="py-8 text-center">
+                    <TriangleAlert v-if="brief.ai_status === 'failed'" class="size-18 text-destructive mx-auto"></TriangleAlert>
                     <p class="text-destructive font-medium mb-2">Analysis Failed</p>
                     <p class="text-sm text-muted-foreground">{{ brief.ai_error || 'An unknown error occurred.' }}</p>
                 </CardContent>
@@ -751,6 +766,34 @@ defineOptions({
                         <span class="font-medium">{{ analysis.pitch_complexity_score }}/10</span>
                     </div>
                     <p class="text-muted-foreground">{{ analysis.ai_reasoning }}</p>
+                </CardContent>
+            </Card>
+
+            <Card v-if="analysis?.total_tokens">
+                <CardHeader>
+                    <CardTitle class="text-sm">AI Usage</CardTitle>
+                </CardHeader>
+                <CardContent class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Model</span>
+                        <span class="font-medium text-xs">{{ analysis.model_used }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Prompt Tokens</span>
+                        <span class="font-medium">{{ analysis.prompt_tokens?.toLocaleString() }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Completion Tokens</span>
+                        <span class="font-medium">{{ analysis.completion_tokens?.toLocaleString() }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Total Tokens</span>
+                        <span class="font-medium">{{ analysis.total_tokens?.toLocaleString() }}</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-2">
+                        <span class="text-muted-foreground">Est. Cost</span>
+                        <span class="font-medium">${{ Number(analysis.cost_usd)?.toFixed(6) }}</span>
+                    </div>
                 </CardContent>
             </Card>
 

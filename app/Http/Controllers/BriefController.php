@@ -11,6 +11,7 @@ use App\Http\Resources\AiAnalysisResource;
 use App\Http\Resources\BriefResource;
 use App\Jobs\AnalyzeBriefJob;
 use App\Models\Activity;
+use App\Services\AI\AIAnalysisPipeline;
 use App\Models\Brief;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,7 +78,18 @@ class BriefController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        AnalyzeBriefJob::dispatch($brief, false, $brief->ai_model);
+        if (config('briefgood.use_queue', true)) {
+            AnalyzeBriefJob::dispatch($brief, false, $brief->ai_model);
+        } else {
+            try {
+                $pipeline = app(AIAnalysisPipeline::class);
+                $pipeline->run($brief, false, $brief->ai_model);
+            } catch (\Throwable $e) {
+                // Error is already saved to brief->ai_error by the pipeline
+                // Just log it here
+                report($e);
+            }
+        }
 
         return redirect()->route('briefs.show', $brief);
     }
@@ -170,9 +182,16 @@ class BriefController extends Controller
     {
         $this->authorize('analyze', $brief);
 
-        AnalyzeBriefJob::dispatch($brief, $request->boolean('advanced'), $brief->ai_model);
+        if (config('briefgood.use_queue', true)) {
+            AnalyzeBriefJob::dispatch($brief, $request->boolean('advanced'), $brief->ai_model);
+            return back()->with('success', 'AI analysis has been queued.');
+        }
 
-        return back()->with('success', 'AI analysis has been queued.');
+        // Run synchronously without queue
+        $pipeline = app(AIAnalysisPipeline::class);
+        $pipeline->run($brief, $request->boolean('advanced'), $brief->ai_model);
+
+        return back()->with('success', 'AI analysis completed.');
     }
 
     public function updateAnalysis(UpdateAnalysisRequest $request, Brief $brief): RedirectResponse
