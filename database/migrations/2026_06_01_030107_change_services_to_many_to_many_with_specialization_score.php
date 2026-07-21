@@ -40,12 +40,17 @@ return new class extends Migration
             });
         }
 
-        // Remove the old business_unit_id column from services table
-        if (Schema::hasColumn('services', 'business_unit_id')) {
-            Schema::table('services', function (Blueprint $table) {
-                $table->dropForeign(['business_unit_id']);
-                $table->dropColumn('business_unit_id');
-            });
+        // Remove the old business_unit_id column from services table (if it exists)
+        // This column only existed in PostgreSQL version, not in MySQL version
+        try {
+            if (Schema::hasColumn('services', 'business_unit_id')) {
+                Schema::table('services', function (Blueprint $table) {
+                    $table->dropForeign(['business_unit_id']);
+                    $table->dropColumn('business_unit_id');
+                });
+            }
+        } catch (\Exception $e) {
+            // Column doesn't exist or can't be dropped, skip
         }
     }
 
@@ -55,11 +60,15 @@ return new class extends Migration
     public function down(): void
     {
         // Add back the business_unit_id column only if it doesn't exist
-        if (!Schema::hasColumn('services', 'business_unit_id')) {
-            Schema::table('services', function (Blueprint $table) {
-                $table->uuid('business_unit_id')->nullable();
-                $table->foreign('business_unit_id')->references('id')->on('business_units')->onDelete('set null');
-            });
+        try {
+            if (!Schema::hasColumn('services', 'business_unit_id')) {
+                Schema::table('services', function (Blueprint $table) {
+                    $table->uuid('business_unit_id')->nullable();
+                    $table->foreign('business_unit_id')->references('id')->on('business_units')->onDelete('set null');
+                });
+            }
+        } catch (\Exception $e) {
+            // Column already exists or can't be added
         }
 
         Schema::dropIfExists('business_unit_service');
