@@ -33,6 +33,25 @@ readonly class BriefAnalysisResultDto
     ) {}
 
     /**
+     * Normalize a value to array - handles JSON strings and other edge cases
+     */
+    protected static function normalizeArray(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data, string $modelUsed): self
@@ -47,9 +66,9 @@ readonly class BriefAnalysisResultDto
             timeline: (string) ($data['timeline'] ?? ''),
             budget: (string) ($data['budget'] ?? ''),
             mandatoryRequirements: (string) ($data['mandatory_requirements'] ?? ''),
-            recommendedBusinessUnits: $data['recommended_business_units'] ?? [],
-            recommendedServices: $data['recommended_services'] ?? [],
-            recommendedResources: $data['recommended_resources'] ?? [],
+            recommendedBusinessUnits: self::normalizeArray($data['recommended_business_units'] ?? null),
+            recommendedServices: self::normalizeArray($data['recommended_services'] ?? null),
+            recommendedResources: self::normalizeArray($data['recommended_resources'] ?? null),
             pitchComplexityScore: (int) ($data['pitch_complexity_score'] ?? 5),
             aiConfidenceScore: (float) ($data['ai_confidence_score'] ?? 0),
             aiReasoning: (string) ($data['ai_reasoning'] ?? ''),
@@ -77,9 +96,9 @@ readonly class BriefAnalysisResultDto
             timeline: (string) ($data['timeline'] ?? ''),
             budget: (string) ($data['budget'] ?? ''),
             mandatoryRequirements: (string) ($data['mandatory_requirements'] ?? ''),
-            recommendedBusinessUnits: $data['recommended_business_units'] ?? [],
-            recommendedServices: $data['recommended_services'] ?? [],
-            recommendedResources: $data['recommended_resources'] ?? [],
+            recommendedBusinessUnits: self::normalizeArray($data['recommended_business_units'] ?? null),
+            recommendedServices: self::normalizeArray($data['recommended_services'] ?? null),
+            recommendedResources: self::normalizeArray($data['recommended_resources'] ?? null),
             pitchComplexityScore: (int) ($data['pitch_complexity_score'] ?? 5),
             aiConfidenceScore: (float) ($data['ai_confidence_score'] ?? 0),
             aiReasoning: (string) ($data['ai_reasoning'] ?? ''),
