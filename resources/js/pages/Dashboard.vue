@@ -68,7 +68,7 @@ const canViewBrief = (): boolean => {
     <Head title="Dashboard" />
 
     <div class="space-y-6 p-4">
-        <section class="relative overflow-hidden rounded-xl bg-emerald-700 text-white shadow-sm">
+        <section class="relative overflow-hidden rounded-xl bg-[#1C7A56] text-white shadow-sm">
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,theme(colors.white)/10,transparent_35%)]" />
             <div class="relative grid gap-8 px-6 py-10 lg:grid-cols-[1.4fr_1fr] lg:px-12 lg:py-16">
                 <div class="space-y-6">
@@ -94,7 +94,7 @@ const canViewBrief = (): boolean => {
                 </div>
 
                 <div class="relative grid h-full place-items-center overflow-hidden rounded-[3rem] bg-white p-8 shadow-sm">
-                    <div class="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-700 text-white shadow-md">
+                    <div class="absolute right-6 top-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#1C7A56] text-white shadow-md">
                         <ArrowUpRight class="size-5" />
                     </div>
                     <div class="flex h-full w-full flex-col items-center justify-center gap-4 rounded-[2.5rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -123,7 +123,7 @@ const canViewBrief = (): boolean => {
                             <p class="text-sm uppercase tracking-[0.24em] text-muted-foreground">Active Briefs</p>
                             <p class="mt-4 text-4xl font-semibold">{{ stats.active_briefs }}</p>
                         </div>
-                        <div class="rounded-xl bg-emerald-700 p-3 text-white">
+                        <div class="rounded-xl bg-[#1C7A56] p-3 text-white">
                             <Briefcase class="size-5" />
                         </div>
                     </div>
