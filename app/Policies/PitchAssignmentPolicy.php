@@ -36,4 +36,12 @@ class PitchAssignmentPolicy
         return $pitchAssignment->business_unit_id === $user->business_unit_id
             && $pitchAssignment->status === PitchAssignmentStatus::Pending;
     }
+
+    /**
+     * Only SuperAdmin or GroupAdmin can send email notifications
+     */
+    public function sendNotification(User $user, PitchAssignment $pitchAssignment): bool
+    {
+        return $user->hasRole(UserRole::SuperAdmin) || $user->hasRole(UserRole::GroupAdmin);
+    }
 }

@@ -99,7 +99,7 @@ class BriefController extends Controller
         $this->authorize('view', $brief);
 
         $brief = $this->briefs->find($brief->id) ?? $brief;
-        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource', 'pitchAssignments.businessUnit']);
+        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource', 'pitchAssignments.businessUnit', 'pitchAssignments.pic']);
 
         return Inertia::render('briefs/Show', [
             'brief' => BriefResource::make($brief)->resolve(),
@@ -126,6 +126,7 @@ class BriefController extends Controller
                     'business_unit' => $assignment->businessUnit?->name,
                     'matched_services' => $recommendation?->matched_services ?? [],
                     'recommendation_confidence' => $recommendation?->confidence,
+                    'notified_at' => $assignment->notified_at?->toIso8601String(),
                 ];
             }),
             'resourceAllocations' => $brief->resourceAllocations->map(fn ($allocation) => [
@@ -143,7 +144,7 @@ class BriefController extends Controller
         $this->authorize('view', $brief);
 
         $brief = $this->briefs->find($brief->id) ?? $brief;
-        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource', 'pitchAssignments.businessUnit']);
+        $brief->load(['latestAnalysis.recommendations', 'resourceAllocations.resource', 'pitchAssignments.businessUnit', 'pitchAssignments.pic']);
 
         return Inertia::render('briefs/Preview', [
             'brief' => BriefResource::make($brief)->resolve(),

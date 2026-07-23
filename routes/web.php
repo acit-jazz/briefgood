@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('pitch-assignments/{pitchAssignment}/accept', [PitchPipelineController::class, 'accept'])->name('pitch-assignments.accept');
     Route::post('pitch-assignments/{pitchAssignment}/decline', [PitchPipelineController::class, 'decline'])->name('pitch-assignments.decline');
+    Route::post('pitch-assignments/{pitchAssignment}/send', [PitchPipelineController::class, 'sendNotification'])->name('pitch-assignments.send');
 
     Route::resource('business-units', BusinessUnitController::class)->except(['show']);
 

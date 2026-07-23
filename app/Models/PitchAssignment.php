@@ -23,6 +23,7 @@ class PitchAssignment extends Model
         'rejection_reason',
         'internal_notes',
         'responded_at',
+        'notified_at',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class PitchAssignment extends Model
             'confidence' => 'decimal:2',
             'status' => PitchAssignmentStatus::class,
             'responded_at' => 'datetime',
+            'notified_at' => 'datetime',
         ];
     }
 

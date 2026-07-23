@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
-import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check, Clock, CircleDot, TriangleAlert } from 'lucide-vue-next';
+import { Sparkles, FileText, Brain, Building2, CheckCircle, FileDown, Pencil, X, Check, Clock, CircleDot, TriangleAlert, Mail } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,7 @@ type PitchAssignment = {
     business_unit?: string;
     matched_services?: string[];
     recommendation_confidence?: number;
+    notified_at?: string | null;
 };
 
 const props = defineProps<{
@@ -98,11 +99,16 @@ const canAcceptDecline = computed(() => {
     return myAssignment.value?.status === 'pending';
 });
 
+const canSendNotification = computed(() => {
+    return isSuperAdmin.value || isGroupAdmin.value;
+});
+
 // Dialog states
 const showAcceptDialog = ref(false);
 const showDeclineDialog = ref(false);
 const selectedAssignmentId = ref<string | null>(null);
 const declineReason = ref('');
+const sendingAssignmentId = ref<string | null>(null);
 
 const declineReasonOptions = [
     'Team full',
@@ -293,6 +299,16 @@ function acceptAssignment(assignmentId: string) {
 function declineAssignment(assignmentId: string, reason: string = '') {
     router.post(`/pitch-assignments/${assignmentId}/decline`, { reason }, {
         preserveScroll: true,
+    });
+}
+
+function sendAssignmentNotification(assignmentId: string) {
+    sendingAssignmentId.value = assignmentId;
+    router.post(`/pitch-assignments/${assignmentId}/send`, {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            sendingAssignmentId.value = null;
+        },
     });
 }
 
@@ -854,6 +870,24 @@ defineOptions({
                                 <X class="mr-1 size-4" />
                                 Decline
                             </Button>
+                        </div>
+                        <!-- Send notification button for admins -->
+                        <div v-if="canSendNotification && pitch.status === 'pending'" class="flex gap-2 mt-3 pt-3 border-t">
+                            <Button
+                                v-if="!pitch.notified_at"
+                                size="sm"
+                                variant="default"
+                                class="flex-1 bg-[#1C7A56] hover:bg-[#166c47]"
+                                :disabled="sendingAssignmentId === pitch.id"
+                                @click="sendAssignmentNotification(pitch.id)"
+                            >
+                                <Spinner v-if="sendingAssignmentId === pitch.id" class="mr-1 size-4" />
+                                <Mail v-else class="mr-1 size-4" />
+                                {{ sendingAssignmentId === pitch.id ? 'Sending...' : 'SEND' }}
+                            </Button>
+                            <span v-else class="flex-1 text-center text-xs text-muted-foreground py-1">
+                                Sent {{ new Date(pitch.notified_at).toLocaleDateString() }}
+                            </span>
                         </div>
                     </div>
                 </CardContent>

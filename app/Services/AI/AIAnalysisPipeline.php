@@ -219,8 +219,7 @@ class AIAnalysisPipeline
                 ],
             );
 
-            // Send email notification to PIC if they have an email
-            $this->sendAssignmentNotification($assignment, $brief);
+            // Email will be sent manually via SEND button on the brief page
         }
 
         $brief->update(['status' => BriefStatus::Assigned]);
