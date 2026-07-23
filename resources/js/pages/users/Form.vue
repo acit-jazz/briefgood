@@ -9,11 +9,6 @@ import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
 import { index as usersIndex, update as usersUpdate } from '@/routes/users';
 
-type Role = {
-    value: string;
-    label: string;
-};
-
 type BusinessUnit = {
     id: string;
     name: string;
@@ -27,7 +22,7 @@ const props = defineProps<{
         role: string;
         business_unit?: { id: string; name: string } | null;
     };
-    roles: Role[];
+    roles: [];
     businessUnits: BusinessUnit[];
 }>();
 
@@ -44,11 +39,7 @@ setLayoutProps({
     ],
 });
 
-function getRoleLabel(roleValue: string): string {
-    const role = props.roles.find(r => r.value === roleValue);
-
-    return role?.label || roleValue;
-}
+console.log('Roles:', props.roles);
 </script>
 
 <template>
@@ -98,9 +89,9 @@ function getRoleLabel(roleValue: string): string {
                         >
                             <option
                                 v-for="role in roles"
-                                :key="role.value"
-                                :value="role.value"
-                                :selected="role.value === user?.role"
+                                :key="role"
+                                :value="role"
+                                :selected="role == user?.role"
                             >
                                 {{ role }}
                             </option>
