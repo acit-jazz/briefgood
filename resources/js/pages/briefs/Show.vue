@@ -73,6 +73,10 @@ const props = defineProps<{
         estimated_workload_percent?: number;
         estimated_duration_days?: number;
     }>;
+    businessUnits?: Array<{
+        id: string;
+        name: string;
+    }>;
 }>();
 
 const page = usePage();
@@ -103,12 +107,21 @@ const canSendNotification = computed(() => {
     return isSuperAdmin.value || isGroupAdmin.value;
 });
 
+// Get business units that are not yet assigned to this brief
+const availableBusinessUnits = computed(() => {
+    const assignedIds = props.pitchAssignments.map(p => p.business_unit_id);
+    return props.businessUnits?.filter(bu => !assignedIds.includes(bu.id)) ?? [];
+});
+
 // Dialog states
 const showAcceptDialog = ref(false);
 const showDeclineDialog = ref(false);
+const showAddPitchDialog = ref(false);
 const selectedAssignmentId = ref<string | null>(null);
 const declineReason = ref('');
 const sendingAssignmentId = ref<string | null>(null);
+const selectedBusinessUnitId = ref<string | null>(null);
+const addingPitchAssignment = ref(false);
 
 const declineReasonOptions = [
     'Team full',
@@ -308,6 +321,50 @@ function sendAssignmentNotification(assignmentId: string) {
         preserveScroll: true,
         onFinish: () => {
             sendingAssignmentId.value = null;
+        },
+    });
+}
+
+function openAddPitchDialog() {
+    selectedBusinessUnitId.value = null;
+    showAddPitchDialog.value = true;
+}
+
+function closeAddPitchDialog() {
+    showAddPitchDialog.value = false;
+    selectedBusinessUnitId.value = null;
+}
+
+function addPitchAssignment() {
+    if (!selectedBusinessUnitId.value) {
+        return;
+    }
+    addingPitchAssignment.value = true;
+    router.post('/pitch-assignments', {
+        brief_id: props.brief.id,
+        business_unit_id: selectedBusinessUnitId.value,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Force full page data refresh
+            window.location.reload();
+        },
+        onFinish: () => {
+            addingPitchAssignment.value = false;
+            closeAddPitchDialog();
+        },
+    });
+}
+
+function deletePitchAssignment(assignmentId: string) {
+    if (!confirm('Are you sure you want to delete this pitch assignment?')) {
+        return;
+    }
+    router.delete(`/pitch-assignments/${assignmentId}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Force full page data refresh
+            window.location.reload();
         },
     });
 }
@@ -814,8 +871,17 @@ defineOptions({
             </Card>
 
             <Card v-if="pitchAssignments.length && !isProcessing">
-                <CardHeader>
+                <CardHeader class="flex flex-row items-center justify-between">
                     <CardTitle class="text-sm">Pitch Assignments</CardTitle>
+                    <Button
+                        v-if="canEdit"
+                        size="sm"
+                        variant="outline"
+                        @click="openAddPitchDialog"
+                    >
+                        <Sparkles class="mr-1 size-4" />
+                        Add
+                    </Button>
                 </CardHeader>
                 <CardContent class="space-y-4">
                     <div
@@ -830,12 +896,23 @@ defineOptions({
                                     ({{ pitch.confidence }}% AI confidence)
                                 </span>
                             </div>
-                            <div
-                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize"
-                                :style="getStatusStyle(pitch.status)"
-                            >
-                                <component :is="getStatusIcon(pitch.status)" class="size-3.5" />
-                                {{ pitch.status }}
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize"
+                                    :style="getStatusStyle(pitch.status)"
+                                >
+                                    <component :is="getStatusIcon(pitch.status)" class="size-3.5" />
+                                    {{ pitch.status }}
+                                </div>
+                                <Button
+                                    v-if="canEdit"
+                                    size="sm"
+                                    variant="ghost"
+                                    class="size-6 p-0 text-destructive  hover:text-red-600"
+                                    @click="deletePitchAssignment(pitch.id)"
+                                >
+                                    <X class="size-4" />
+                                </Button>
                             </div>
                         </div>
                         <div v-if="pitch.matched_services?.length" class="space-y-1">
@@ -933,6 +1010,44 @@ defineOptions({
             <DialogFooter class="gap-2 justify-center">
                 <Button variant="outline" @click="closeDeclineDialog" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto">Back</Button>
                 <Button @click="confirmDecline" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto bg-[#1C7A56] text-white">Send</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <!-- Add Pitch Assignment Dialog -->
+    <Dialog v-model:open="showAddPitchDialog">
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <img src="/images/icon-plane.svg" class="w-32 block mx-auto">
+                <DialogTitle class="text-2xl font-normal text-center">Add Pitch Assignment</DialogTitle>
+                <DialogDescription class="text-center">Assign a business unit to this brief.</DialogDescription>
+            </DialogHeader>
+            <div class="py-4">
+                <label class="text-sm font-medium mb-2 block">Business Unit</label>
+                <select
+                    v-model="selectedBusinessUnitId"
+                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                    <option value="">Select a business unit...</option>
+                    <option
+                        v-for="bu in availableBusinessUnits"
+                        :key="bu.id"
+                        :value="bu.id"
+                    >
+                        {{ bu.name }}
+                    </option>
+                </select>
+            </div>
+            <DialogFooter class="gap-2 justify-center">
+                <Button variant="outline" @click="closeAddPitchDialog" class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto">Back</Button>
+                <Button
+                    @click="addPitchAssignment"
+                    :disabled="!selectedBusinessUnitId || addingPitchAssignment || availableBusinessUnits.length === 0"
+                    class="rounded-full px-7 py-3 min-w-40 text-base cursor-pointer h-auto bg-[#1C7A56] text-white"
+                >
+                    <Spinner v-if="addingPitchAssignment" class="mr-1 size-4" />
+                    {{ addingPitchAssignment ? 'Adding...' : (availableBusinessUnits.length === 0 ? 'All BUs Assigned' : 'Add') }}
+                </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

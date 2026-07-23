@@ -44,4 +44,20 @@ class PitchAssignmentPolicy
     {
         return $user->hasRole(UserRole::SuperAdmin) || $user->hasRole(UserRole::GroupAdmin);
     }
+
+    /**
+     * Only SuperAdmin or GroupAdmin can create pitch assignments
+     */
+    public function create(User $user): bool
+    {
+        return $user->hasRole(UserRole::SuperAdmin) || $user->hasRole(UserRole::GroupAdmin);
+    }
+
+    /**
+     * Only SuperAdmin or GroupAdmin can delete pitch assignments
+     */
+    public function delete(User $user, PitchAssignment $pitchAssignment): bool
+    {
+        return $user->hasRole(UserRole::SuperAdmin) || $user->hasRole(UserRole::GroupAdmin);
+    }
 }

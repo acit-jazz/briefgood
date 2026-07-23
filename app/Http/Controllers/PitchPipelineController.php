@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\PitchAssignmentStatus;
 use App\Http\Resources\BriefResource;
 use App\Mail\PitchAssignmentCreated;
+use App\Models\BusinessUnit;
 use App\Models\PitchAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -33,6 +34,59 @@ class PitchPipelineController extends Controller
                 ]),
             ])->values(),
         ]);
+    }
+
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorize('create', PitchAssignment::class);
+
+        $validated = $request->validate([
+            'brief_id' => 'required|uuid|exists:briefs,id',
+            'business_unit_id' => 'required|uuid|exists:business_units,id',
+            'confidence' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $brief = \App\Models\Brief::findOrFail($validated['brief_id']);
+
+        // Get the business unit's PIC
+        $businessUnit = BusinessUnit::findOrFail($validated['business_unit_id']);
+
+        // Check if assignment already exists
+        $existing = PitchAssignment::query()
+            ->where('brief_id', $validated['brief_id'])
+            ->where('business_unit_id', $validated['business_unit_id'])
+            ->first();
+
+        if ($existing) {
+            return back()->with('error', 'This business unit is already assigned to this brief.');
+        }
+
+        try {
+            $assignment = PitchAssignment::query()->create([
+                'brief_id' => $validated['brief_id'],
+                'business_unit_id' => $validated['business_unit_id'],
+                'assigned_by' => $request->user()->id,
+                'pic_user_id' => $businessUnit->pic_user_id,
+                'confidence' => $validated['confidence'] ?? null,
+                'status' => PitchAssignmentStatus::Pending,
+            ]);
+
+            return back()->with('success', 'Pitch assignment created successfully.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() === '23505') {
+                return back()->with('error', 'This business unit is already assigned to this brief.');
+            }
+            throw $e;
+        }
+    }
+
+    public function destroy(PitchAssignment $pitchAssignment): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorize('delete', $pitchAssignment);
+
+        $pitchAssignment->delete();
+
+        return back()->with('success', 'Pitch assignment deleted.');
     }
 
     public function accept(PitchAssignment $pitchAssignment): \Illuminate\Http\RedirectResponse

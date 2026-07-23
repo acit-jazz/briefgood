@@ -21,6 +21,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('services', [ServiceController::class, 'store'])->name('services.store');
 
+    Route::post('pitch-assignments', [PitchPipelineController::class, 'store'])->name('pitch-assignments.store');
+    Route::delete('pitch-assignments/{pitchAssignment}', [PitchPipelineController::class, 'destroy'])->name('pitch-assignments.destroy');
     Route::post('pitch-assignments/{pitchAssignment}/accept', [PitchPipelineController::class, 'accept'])->name('pitch-assignments.accept');
     Route::post('pitch-assignments/{pitchAssignment}/decline', [PitchPipelineController::class, 'decline'])->name('pitch-assignments.decline');
     Route::post('pitch-assignments/{pitchAssignment}/send', [PitchPipelineController::class, 'sendNotification'])->name('pitch-assignments.send');

@@ -102,7 +102,7 @@ function getRoleLabel(roleValue: string): string {
                                 :value="role.value"
                                 :selected="role.value === user?.role"
                             >
-                                {{ role.label }}
+                                {{ role }}
                             </option>
                         </select>
                         <InputError :message="errors.role" />

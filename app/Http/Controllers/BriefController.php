@@ -11,8 +11,9 @@ use App\Http\Resources\AiAnalysisResource;
 use App\Http\Resources\BriefResource;
 use App\Jobs\AnalyzeBriefJob;
 use App\Models\Activity;
-use App\Services\AI\AIAnalysisPipeline;
+use App\Models\BusinessUnit;
 use App\Models\Brief;
+use App\Services\AI\AIAnalysisPipeline;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -113,9 +114,12 @@ class BriefController extends Controller
                     ->first();
 
                 // Fallback: match by business unit name if not found by ID
+                // Also try stripping category suffix like " (Brand Strategy)" from recommendation names
                 if (! $recommendation && $assignment->businessUnit?->name) {
+                    $cleanName = preg_replace('/\s*\(.*\)$/', '', $assignment->businessUnit->name);
                     $recommendation = $brief->latestAnalysis?->recommendations
-                        ->firstWhere('business_unit_name', $assignment->businessUnit->name);
+                        ->filter(fn ($rec) => preg_replace('/\s*\(.*\)$/', '', $rec->business_unit_name ?? '') === $cleanName)
+                        ->first();
                 }
 
                 return [
@@ -135,6 +139,10 @@ class BriefController extends Controller
                 'estimated_hours' => $allocation->estimated_hours,
                 'estimated_workload_percent' => $allocation->estimated_workload_percent,
                 'estimated_duration_days' => $allocation->estimated_duration_days,
+            ]),
+            'businessUnits' => BusinessUnit::all()->map(fn ($bu) => [
+                'id' => $bu->id,
+                'name' => $bu->name,
             ]),
         ]);
     }
@@ -157,8 +165,10 @@ class BriefController extends Controller
                     ->first();
 
                 if (! $recommendation && $assignment->businessUnit?->name) {
+                    $cleanName = preg_replace('/\s*\(.*\)$/', '', $assignment->businessUnit->name);
                     $recommendation = $brief->latestAnalysis?->recommendations
-                        ->firstWhere('business_unit_name', $assignment->businessUnit->name);
+                        ->filter(fn ($rec) => preg_replace('/\s*\(.*\)$/', '', $rec->business_unit_name ?? '') === $cleanName)
+                        ->first();
                 }
 
                 return [
