@@ -30,6 +30,7 @@ class BriefResource extends JsonResource
             'ai_error' => $this->ai_error,
             'primary_file_name' => $this->primary_file_name,
             'created_at' => $this->created_at?->toIso8601String(),
+            'deleted_at' => $this->deleted_at?->toIso8601String(),
             'creator' => $this->whenLoaded('creator', fn () => [
                 'id' => $this->creator?->id,
                 'name' => $this->creator?->name,

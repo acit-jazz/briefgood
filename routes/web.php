@@ -14,10 +14,12 @@ Route::redirect('/', '/login')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
-    Route::resource('briefs', BriefController::class)->only(['index', 'create', 'store', 'show']);
+    Route::resource('briefs', BriefController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
     Route::patch('briefs/{brief}/analysis', [BriefController::class, 'updateAnalysis'])->name('briefs.analysis.update');
     Route::post('briefs/{brief}/analyze', [BriefController::class, 'analyze'])->name('briefs.analyze');
     Route::get('briefs/{brief}/preview', [BriefController::class, 'preview'])->name('briefs.preview');
+    Route::post('briefs/{brief}/restore', [BriefController::class, 'restore'])->name('briefs.restore');
+    Route::get('trash/briefs', [BriefController::class, 'trash'])->name('briefs.trash');
 
     Route::post('services', [ServiceController::class, 'store'])->name('services.store');
 

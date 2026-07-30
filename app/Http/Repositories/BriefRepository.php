@@ -30,4 +30,31 @@ class BriefRepository
             ])
             ->find($id);
     }
+
+    public function findWithTrashed(string $id): ?Brief
+    {
+        return Brief::query()
+            ->withTrashed()
+            ->with([
+                'creator',
+                'files',
+                'latestAnalysis.recommendations',
+                'pitchAssignments.businessUnit',
+                'resourceAllocations.resource',
+                'activities.causer',
+            ])
+            ->find($id);
+    }
+
+    public function paginateTrashed(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    {
+        return Brief::query()
+            ->withTrashed()
+            ->with(['creator', 'latestAnalysis', 'pitchAssignments.businessUnit'])
+            ->onlyTrashed()
+            ->filter($filters)
+            ->latest('deleted_at')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
 }

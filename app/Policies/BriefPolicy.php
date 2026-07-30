@@ -65,6 +65,22 @@ class BriefPolicy
     }
 
     /**
+     * Only Super Admin can restore briefs
+     */
+    public function restore(User $user, Brief $brief): bool
+    {
+        return $user->hasRole(UserRole::SuperAdmin);
+    }
+
+    /**
+     * Only Super Admin can view trash
+     */
+    public function viewTrash(User $user): bool
+    {
+        return $user->hasRole(UserRole::SuperAdmin);
+    }
+
+    /**
      * Only Super Admin and Group Admin can run AI analysis
      */
     public function analyze(User $user, Brief $brief): bool

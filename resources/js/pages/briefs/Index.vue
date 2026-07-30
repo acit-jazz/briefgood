@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
-import { Eye, Search } from 'lucide-vue-next';
+import { Eye, Search, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import AnimationButton from '@/components/ui/button/AnimationButton.vue';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
-import { create, index, show } from '@/routes/briefs';
+import { create, index, show, destroy, trash } from '@/routes/briefs';
 
 type BriefItem = {
     id: string;
@@ -41,6 +41,24 @@ const canCreateBrief = computed(() => {
 
     return role === 'super_admin' || role === 'group_admin';
 });
+
+const canDeleteBrief = computed(() => {
+    const role = auth.value?.user?.role;
+
+    return role === 'super_admin';
+});
+
+const canViewTrash = computed(() => {
+    const role = auth.value?.user?.role;
+
+    return role === 'super_admin';
+});
+
+function deleteBrief(briefId: string) {
+    if (confirm('Move this brief to trash?')) {
+        router.delete(destroy(briefId).url, { preserveScroll: true });
+    }
+}
 
 // Watch for URL changes and update local state
 watch(() => props.filters, (newFilters) => {
@@ -120,37 +138,44 @@ defineOptions({
                     />
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-sm">
+                    <button v-if="canViewTrash"
+                        @click="router.get(trash().url)"
+                        class="inline-flex items-center gap-1.5 cursor-pointer rounded-full px-3 py-2 bg-muted hover:bg-muted/80 transition-colors"
+                    >
+                        <Trash2 class="size-4" />
+                        Trash
+                    </button>
                     <button
                         @click="setStatusFilter('')"
-                        class="rounded-full px-3 py-2 transition-colors"
+                        class="rounded-full px-3 py-2 transition-colors cursor-pointer"
                         :class="activeStatus === '' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
                     >
                         All
                     </button>
                     <button
                         @click="setStatusFilter('new')"
-                        class="rounded-full px-3 py-2 transition-colors"
+                        class="rounded-full px-3 py-2 transition-colors cursor-pointer"
                         :class="activeStatus === 'new' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
                     >
                         New
                     </button>
                     <button
                         @click="setStatusFilter('reviewing')"
-                        class="rounded-full px-3 py-2 transition-colors"
+                        class="rounded-full px-3 py-2 transition-colors cursor-pointer"
                         :class="activeStatus === 'reviewing' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
                     >
                         Reviewing
                     </button>
                     <button
                         @click="setStatusFilter('assigned')"
-                        class="rounded-full px-3 py-2 transition-colors"
+                        class="rounded-full px-3 py-2 transition-colors cursor-pointer"
                         :class="activeStatus === 'assigned' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
                     >
                         Assigned
                     </button>
                     <button
                         @click="setStatusFilter('completed')"
-                        class="rounded-full px-3 py-2 transition-colors"
+                        class="rounded-full px-3 py-2 transition-colors cursor-pointer"
                         :class="activeStatus === 'completed' ? 'bg-[#1C7A56] text-white' : 'bg-muted hover:bg-muted/80'"
                     >
                         Completed
@@ -211,12 +236,20 @@ defineOptions({
                                     {{ brief.deadline }}
                                 </td>
                                 <td class="px-5 py-4 text-right">
-                                    <Button as-child size="sm" variant="outline">
-                                        <Link :href="show(brief.id)" class="inline-flex items-center gap-2">
-                                            <Eye class="size-4" />
-                                            View Details
-                                        </Link>
-                                    </Button>
+                                    <div class="inline-flex items-center gap-2">
+                                        <Button as-child size="sm" variant="outline">
+                                            <Link :href="show(brief.id)" class="inline-flex items-center gap-2">
+                                                <Eye class="size-4" />
+                                                View Details
+                                            </Link>
+                                        </Button>
+                                        <Button v-if="canDeleteBrief" as-child size="sm" variant="destructive" @click="deleteBrief(brief.id)">
+                                            <span class="inline-flex items-center gap-2 cursor-pointer">
+                                                <Trash2 class="size-4" />
+                                                
+                                            </span>
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

@@ -37,6 +37,18 @@ class BriefController extends Controller
         ]);
     }
 
+    public function trash(Request $request): Response
+    {
+        $this->authorize('viewTrash', Brief::class);
+
+        $items = $this->briefs->paginateTrashed(15, $request->only(['search']));
+
+        return Inertia::render('briefs/Trash', [
+            'briefs' => BriefResource::collection($items),
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
     public function create(): Response
     {
         $this->authorize('create', Brief::class);
@@ -221,5 +233,44 @@ class BriefController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Analysis updated');
+    }
+
+    public function destroy(Request $request, Brief $brief): RedirectResponse
+    {
+        $this->authorize('delete', $brief);
+
+        Activity::query()->create([
+            'subject_type' => Brief::class,
+            'subject_id' => $brief->id,
+            'causer_id' => $request->user()->id,
+            'event' => 'brief.deleted',
+            'description' => "Brief \"{$brief->title}\" moved to trash.",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        $brief->delete();
+
+        return redirect()->route('briefs.index')->with('success', 'Brief moved to trash.');
+    }
+
+    public function restore(Request $request, string $id): RedirectResponse
+    {
+        $brief = Brief::withTrashed()->findOrFail($id);
+        $this->authorize('restore', $brief);
+
+        $brief->restore();
+
+        Activity::query()->create([
+            'subject_type' => Brief::class,
+            'subject_id' => $brief->id,
+            'causer_id' => $request->user()->id,
+            'event' => 'brief.restored',
+            'description' => "Brief \"{$brief->title}\" restored from trash.",
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('briefs.trash')->with('success', 'Brief restored successfully.');
     }
 }
