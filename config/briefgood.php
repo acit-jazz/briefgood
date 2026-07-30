@@ -3,7 +3,7 @@
 return [
 
     'ai' => [
-        'default_model' => env('BRIEFGOOD_AI_MODEL', 'gemini-2.0-flash'),
+        'default_model' => env('BRIEFGOOD_AI_MODEL', 'gemini-3.6-flash'),
         'advanced_model' => env('BRIEFGOOD_AI_ADVANCED_MODEL', 'gemini-2.5-pro'),
         'complexity_threshold' => (int) env('BRIEFGOOD_AI_COMPLEXITY_THRESHOLD', 7),
         'confidence_threshold' => (float) env('BRIEFGOOD_AI_CONFIDENCE_THRESHOLD', 60),

@@ -59,6 +59,6 @@ class GeminiService implements AIProviderInterface
     {
         return $useAdvancedModel
             ? config('briefgood.ai.advanced_model', 'gemini-2.5-pro')
-            : config('briefgood.ai.default_model', 'gemini-2.0-flash');
+            : config('briefgood.ai.default_model', 'gemini-3.6-flash');
     }
 }

@@ -21,7 +21,7 @@ defineOptions({
 });
 
 const aiModels = [
-    { value: 'gemini', label: 'Gemini (Free tier)' },
+    { value: 'gemini', label: 'Gemini 3.6 Flash' },
     { value: 'openai', label: 'OpenAI GPT-4o Mini' },
     { value: 'anthropic', label: 'Anthropic Claude' },
 ];

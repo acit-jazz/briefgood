@@ -22,7 +22,7 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background-color: #4f46e5;
+            background-color: #1C7A56;
             color: #ffffff;
             padding: 24px;
             text-align: center;
@@ -68,7 +68,7 @@
         }
         .cta-button {
             display: inline-block;
-            background-color: #4f46e5;
+            background-color: #1C7A56;
             color: #ffffff;
             text-decoration: none;
             padding: 12px 24px;
@@ -121,7 +121,7 @@
             @endif
 
             <p style="margin-top: 24px;">
-                <a href="{{ url('/briefs/' . $brief->id) }}" class="cta-button">View Brief Details</a>
+                <a href="{{ url('/briefs/' . $brief->id) }}" class="cta-button" style="background-color: #1C7A56; color:#fff">View Brief Details</a>
             </p>
 
             <p style="margin-top: 24px; font-size: 14px; color: #6b7280;">
